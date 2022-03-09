@@ -1,4 +1,9 @@
+import datetime
+from urllib.parse import urlencode
+
 from flask import request, render_template, jsonify
+from werkzeug.utils import redirect
+
 import people
 
 
@@ -15,7 +20,7 @@ def Setup(app):
                     if searchFor in str(value).lower():
                         ret.append(p)
                         break
-                        
+
         elif 'month' in request.args or 'day' in request.args:
             searchMonth = int(request.args.get('month', 0))
             searchDay = int(request.args.get('day', 0))
@@ -41,4 +46,20 @@ def Setup(app):
                 if startMonth <= p['date_of_birth'].month <= endMonth:
                     if startDay <= p['date_of_birth'].day <= endDay:
                         ret.append(p)
+
+        elif 'thisWeek' in request.args:
+            now = datetime.datetime.now()
+            startDT = now - datetime.timedelta(days=now.weekday())
+            endDT = startDT + datetime.timedelta(days=7)
+            print('now=', now)
+            print('startDT=', startDT)
+            print('endDT=', endDT)
+            kwargs = {
+                'start_month': startDT.month,
+                'start_day': startDT.day,
+                'end_month': endDT.month,
+                'end_day': endDT.day,
+            }
+            return redirect(f'/api/people/search?{urlencode(kwargs)}')
+
         return jsonify(ret)

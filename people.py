@@ -13,7 +13,7 @@ def Setup(a):
     with app.app_context():
         MIN_NUM_PEOPLE = 365 * 3
         totalPeople = 0
-        for person in app.db.FindAll(Person):
+        for _ in app.db.FindAll(Person):
             totalPeople += 1
 
         if totalPeople < MIN_NUM_PEOPLE:
@@ -35,6 +35,14 @@ def GetRandomPerson(index=None):
         for thisIndex, row in enumerate(reader):
             if index == thisIndex:
                 dob_month = random.randint(1, 12)
+                dobDT = datetime.datetime(
+                    year=random.randint(1970, 2015),
+                    month=dob_month,
+                    day=random.randint(1, 30 if dob_month in [9, 4, 6, 11] else 31 if dob_month != 2 else 28),
+                )
+                print('dobDT=', dobDT, type(dobDT))
+                print('timestamp=', dobDT.timestamp())
+
                 d = {
                     'first_name': row[0],
                     'last_name': row[1],
@@ -48,10 +56,7 @@ def GetRandomPerson(index=None):
                     'mobile': row[9],
                     'email': row[10],
                     'website': row[11],
-                    'date_of_birth': datetime.date(
-                        year=random.randint(1922, 2015),
-                        month=dob_month,
-                        day=random.randint(1, 30 if dob_month in [9, 4, 6, 11] else 31 if dob_month != 2 else 28),
-                    )
+                    'date_of_birth': dobDT,
+                    'date_of_birth_timestamp': dobDT.timestamp()
                 }
                 return app.db.New(Person, **d)

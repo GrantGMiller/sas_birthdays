@@ -1,12 +1,144 @@
 {% extends "base.html" %}
 
 {% block body %}
-<form method="POST">
-    <input name="searchFor" />
-    <input type="submit" value="Search">
-</form>
-<a href="/search/today">Today</a>
-<a href="/search/thisWeek">This Week</a>
-<a href="/search/thisMonth">This Month</a>
+
+<div class="container mt-3">
+    <div class="mb-3">
+        <label for="searchFor" class="form-label">Search For a Person</label>
+        <div class="row">
+            <div class="col">
+                <input name="searchFor" type="text" class="form-control" id="searchFor"
+                    placeholder="Enter a name/company/email" onkeypress="DoSearch(this);">
+            </div>
+            <!-- <div class="col">
+                    <input class="btn btn-primary mb-3" type="submit" value="Search">
+                </div> -->
+        </div>
+
+
+
+    </div>
+    </form>
+
+    <div>
+        Quick Links for Birthdays:
+
+        <button class="btn btn-sm btn-secondary" onclick="Today();">Today</button>
+        <button class="btn btn-sm btn-secondary" onclick="ThisWeek();">This Week</button>
+        <button class="btn btn-sm btn-secondary" onclick="ThisMonth();">This Month</button>
+    </div>
+</div>
+<hr>
+<div class=" container" id="results">
+
+</div>
+
+
+
+<script>
+    function DoSearch(el) {
+        console.log('DoSearch(', el);
+        $.ajax({
+            url: '/api/people/search?searchFor=' + el.value,
+            success: function (resp) {
+                console.log('searched for', el.value, ', resp=', resp);
+                results = $('#results');
+                results.empty();
+
+                resp.forEach(function (item) {
+                    console.log('item=', item);
+                    AppendCard(item);
+
+
+                })
+            }
+        })
+    }
+
+    function Today() {
+        console.log('Today()');
+        let d = new Date();
+        $.ajax({
+            url: '/api/people/search?month=' + String(d.getMonth() + 1) + '&day=' + d.getDate(),
+            success: function (resp) {
+                console.log('searched for today, resp=', resp);
+                results = $('#results');
+                results.empty();
+
+                resp.forEach(function (item) {
+                    console.log('item=', item);
+                    AppendCard(item);
+
+
+                })
+            }
+        })
+    }
+
+    function ThisWeek() {
+        console.log('ThisWeek()');
+        $.ajax({
+            url: '/api/people/search?thisWeek=true',
+            success: function (resp) {
+                console.log('searched for today, resp=', resp);
+                results = $('#results');
+                results.empty();
+
+                resp.forEach(function (item) {
+                    console.log('item=', item);
+                    AppendCard(item);
+
+
+                })
+            }
+        })
+    }
+
+    function ThisMonth() {
+        console.log('Today()');
+        let d = new Date();
+        $.ajax({
+            url: '/api/people/search?month=' + String(d.getMonth() + 1),
+            success: function (resp) {
+                console.log('searched for today, resp=', resp);
+                results = $('#results');
+                results.empty();
+
+                resp.forEach(function (item) {
+                    console.log('item=', item);
+                    AppendCard(item);
+
+
+                })
+            }
+        })
+    }
+
+    function AppendCard(item) {
+        d = new Date(item['date_of_birth_timestamp'] * 1000);
+        console.log('d=', d);
+        results.append(`
+        <div class="card m-2" >
+            <div class="card-body">
+                <h5 class="card-title">FIRST_NAME LAST_NAME</h5>
+                <p class="card-text">Birthday: DATE_OF_BIRTH</p>
+                <p class="card-text">Address: MAIL_ADDRESS</p>
+                <p class="card-text">Phone: PHONE_NUMBER</p> 
+                <p class="card-text">Email: EMAIL_ADDRESS</p>
+            </div>
+        </div>`.replace(
+            'DATE_OF_BIRTH', d.getMonth() + 1 + '-' + d.getDate() + '-' + d.getFullYear()
+        ).replace(
+            'FIRST_NAME', item['first_name']
+        ).replace('LAST_NAME', item['last_name']
+        ).replace('PHONE_NUMBER', item['phone']
+        ).replace('EMAIL_ADDRESS', item['email']
+        ).replace('MAIL_ADDRESS', item['address']
+        )
+        );
+    }
+</script>
+
+
 
 {% endblock %}
