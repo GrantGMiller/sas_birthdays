@@ -62,6 +62,9 @@
             success: function (resp) {
                 console.log('searched for', value, ', resp=', resp);
                 DrawCards(resp);
+            },
+            error: function (resp) {
+                ShowError();
             }
         })
     }
@@ -76,6 +79,9 @@
                 console.log('searched for today, resp=', resp);
                 DrawCards(resp);
             },
+            error: function (resp) {
+                ShowError();
+            }
         })
 
     }
@@ -88,6 +94,9 @@
             success: function (resp) {
                 console.log('searched for today, resp=', resp);
                 DrawCards(resp);
+            },
+            error: function (resp) {
+                ShowError();
             }
         })
     }
@@ -102,10 +111,18 @@
                 console.log('searched for today, resp=', resp);
                 DrawCards(resp);
 
+            },
+            error: function (resp) {
+                ShowError();
             }
         })
     }
 
+    function ShowError() {
+        results = $('#results');
+        results.empty();
+        results.append('<i>Something went wrong. Try Again.</i>');
+    }
     function DrawCards(items) {
         results = $('#results');
         results.empty();
@@ -119,6 +136,7 @@
             results.append('<i>no results</i>');
         }
     }
+
 
     function AppendCard(item) {
         d = new Date(item['date_of_birth_timestamp'] * 1000);

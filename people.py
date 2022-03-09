@@ -24,7 +24,30 @@ def Setup(a):
 
 
 class Person(BaseTable):
-    pass
+    def UISafe(self):
+        ret = {}
+        for key in self.keys():
+            if key in [
+                'first_name',
+                'last_name',
+                'company',
+                'address',
+                'city',
+                'county',
+                'state',
+                'zip',
+                'phone',
+                'mobile',
+                'email',
+                'website',
+                'date_of_birth_timestamp'
+            ]:
+                ret[key] = self.get(key, None)
+
+            elif key == 'date_of_birth':
+                ret['date_of_birth_iso'] = self[key].isoformat()
+                ret[key] = self[key]
+        return ret
 
 
 def GetRandomPerson(index=None):
