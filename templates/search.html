@@ -1,0 +1,12 @@
+{% extends "base.html" %}
+
+{% block body %}
+<form method="POST">
+    <input name="searchFor" />
+    <input type="submit" value="Search">
+</form>
+<a href="/search/today">Today</a>
+<a href="/search/thisWeek">This Week</a>
+<a href="/search/thisMonth">This Month</a>
+
+{% endblock %}
