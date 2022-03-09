@@ -15,11 +15,22 @@ def Setup(app):
         print('searchFor=', searchFor)
         if searchFor:
             searchFor = searchFor.lower()
+
+            # user should be able to type in multiple words, separate by space
+            # only results that have a match for each sub-word should be returned
+
+            subSearchFor = searchFor.split(' ')
             for p in app.db.FindAll(people.Person):
-                for key, value in p.items():
-                    if searchFor in str(value).lower():
-                        ret.append(p)
-                        break
+                numMatches = 0
+                for subSearch in subSearchFor:
+                    for value in p.values():
+                        if subSearch in str(value).lower():
+                            numMatches += 1
+                            break
+
+                if numMatches >= len(subSearchFor):
+                    # all the sub matches were found
+                    ret.append(p)
 
         elif 'month' in request.args or 'day' in request.args:
             searchMonth = int(request.args.get('month', 0))
