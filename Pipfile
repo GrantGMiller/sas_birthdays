@@ -7,6 +7,9 @@ verify_ssl = true
 
 [packages]
 flask = "*"
+requests = "*"
+flask-dictabase = "*"
+flask-login-dictabase-blueprint = "*"
 
 [requires]
 python_version = "3.8"
