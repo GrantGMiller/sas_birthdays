@@ -8,7 +8,7 @@
         <div class="row">
             <div class="col">
                 <input name="searchFor" type="text" class="form-control" id="searchFor"
-                    placeholder="Enter a name/company/email" onkeypress="DoSearch(this);">
+                    placeholder="Enter a name/company/email" onkeypress="DoSearch();">
             </div>
             <!-- <div class="col">
                     <input class="btn btn-primary mb-3" type="submit" value="Search">
@@ -46,7 +46,7 @@
         results.append('<img class="img-fluid w-25" src="/static/loadingdots2.gif">');
     }
 
-    function DoSearch(el) {
+    function DoSearch() {
         console.log('DoSearch()');
         ShowLoadingIcon();
         clearTimeout(t);
@@ -63,15 +63,7 @@
             url: '/api/people/search?searchFor=' + value,
             success: function (resp) {
                 console.log('searched for', value, ', resp=', resp);
-                results = $('#results');
-                results.empty();
-
-                resp.forEach(function (item) {
-                    console.log('item=', item);
-                    AppendCard(item);
-
-
-                })
+                DrawCards(resp);
             }
         })
     }
@@ -79,22 +71,15 @@
     function Today() {
         console.log('Today()');
         ShowLoadingIcon();
-        let d = new Date();
+        d = new Date();
         $.ajax({
             url: '/api/people/search?month=' + String(d.getMonth() + 1) + '&day=' + d.getDate(),
             success: function (resp) {
                 console.log('searched for today, resp=', resp);
-                results = $('#results');
-                results.empty();
-
-                resp.forEach(function (item) {
-                    console.log('item=', item);
-                    AppendCard(item);
-
-
-                })
-            }
+                DrawCards(resp);
+            },
         })
+
     }
 
     function ThisWeek() {
@@ -104,15 +89,7 @@
             url: '/api/people/search?thisWeek=true',
             success: function (resp) {
                 console.log('searched for today, resp=', resp);
-                results = $('#results');
-                results.empty();
-
-                resp.forEach(function (item) {
-                    console.log('item=', item);
-                    AppendCard(item);
-
-
-                })
+                DrawCards(resp);
             }
         })
     }
@@ -125,17 +102,24 @@
             url: '/api/people/search?month=' + String(d.getMonth() + 1),
             success: function (resp) {
                 console.log('searched for today, resp=', resp);
-                results = $('#results');
-                results.empty();
+                DrawCards(resp);
 
-                resp.forEach(function (item) {
-                    console.log('item=', item);
-                    AppendCard(item);
-
-
-                })
             }
         })
+    }
+
+    function DrawCards(items) {
+        results = $('#results');
+        results.empty();
+
+        if (items.length > 0) {
+            items.forEach(function (item) {
+                console.log('item=', item);
+                AppendCard(item);
+            })
+        } else {
+            results.append('<i>no results</i>');
+        }
     }
 
     function AppendCard(item) {
