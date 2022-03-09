@@ -39,14 +39,25 @@
     let t = setTimeout(function () { }, 10000);
     clearTimeout(t);
 
+    function ShowLoadingIcon() {
+        console.log('ShowLoadingIcon();');
+        results = $('#results');
+        results.empty();
+        results.append('<img class="img-fluid w-25" src="/static/loadingdots2.gif">');
+    }
+
     function DoSearch(el) {
         console.log('DoSearch()');
+        ShowLoadingIcon();
         clearTimeout(t);
         t = setTimeout(function () { DoSearchNow() }, 500);// dont spam the server on each key press
     }
 
     function DoSearchNow() {
         console.log('DoSearchNow()');
+        ShowLoadingIcon();
+
+
         value = $('#searchFor').val();
         $.ajax({
             url: '/api/people/search?searchFor=' + value,
@@ -67,6 +78,7 @@
 
     function Today() {
         console.log('Today()');
+        ShowLoadingIcon();
         let d = new Date();
         $.ajax({
             url: '/api/people/search?month=' + String(d.getMonth() + 1) + '&day=' + d.getDate(),
@@ -87,6 +99,7 @@
 
     function ThisWeek() {
         console.log('ThisWeek()');
+        ShowLoadingIcon();
         $.ajax({
             url: '/api/people/search?thisWeek=true',
             success: function (resp) {
@@ -106,6 +119,7 @@
 
     function ThisMonth() {
         console.log('Today()');
+        ShowLoadingIcon();
         let d = new Date();
         $.ajax({
             url: '/api/people/search?month=' + String(d.getMonth() + 1),
