@@ -1,9 +1,11 @@
 import datetime
+import functools
 import random
 import string
 from urllib.parse import urlencode
 from flask import request, redirect, jsonify
 
+import config
 import people
 
 
@@ -76,6 +78,7 @@ def Setup(app):
         return jsonify(list(r.UISafe() for r in ret))
 
     @app.post('/api/people/add')
+    @VerifyAPIKey
     def APIPeopleAdd():
         print('APIPeopleAdd request.form=', request.form)
         if app.db.FindOne(people.Person, **request.form):
@@ -139,6 +142,7 @@ def Setup(app):
         return jsonify(new)
 
     @app.post('/api/people/edit')
+    @VerifyAPIKey
     def APIPeopleEdit():
         print('APIPeopleAdd request.form=', request.form)
         person = app.db.FindOne(
@@ -146,11 +150,42 @@ def Setup(app):
             first_name=request.form.get('first_name', None),
             last_name=request.form.get('last_name', None)
         )
+
+        # prevent injecting disallowed keys
+        sterilized = {}
+        for key in [
+            'first_name',
+            'last_name',
+            'company',
+            'address',
+            'city',
+            'county',
+            'state',
+            'zip',
+            'phone',
+            'mobile',
+            'email',
+            'website',
+        ]:
+            sterilized[key] = request.form.get(key, None)
+
         if person:
-            person.update(request.form)
+            person.update(sterilized)
         else:
             return jsonify('This person does not exist. Use /api/people/add instead'), 500
 
         dobDT = person['date_of_birth']
         person['date_of_birth_timestamp'] = dobDT.timestamp()
         return jsonify(person)
+
+
+def VerifyAPIKey(func):
+    @functools.wraps(func)
+    def VerifyAPIKeyWrapper(*a, **k):
+        print('req key   =', request.form.get('apiKey', None))
+        print('config key=', config.API_KEY)
+        if request.form.get('apiKey', None) != config.API_KEY:
+            return jsonify('Wrong API KEY'), 403
+        return func(*a, **k)
+
+    return VerifyAPIKeyWrapper
