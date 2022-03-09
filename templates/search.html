@@ -36,12 +36,22 @@
 
 
 <script>
+    let t = setTimeout(function () { }, 10000);
+    clearTimeout(t);
+
     function DoSearch(el) {
-        console.log('DoSearch(', el);
+        console.log('DoSearch()');
+        clearTimeout(t);
+        t = setTimeout(function () { DoSearchNow() }, 500);// dont spam the server on each key press
+    }
+
+    function DoSearchNow() {
+        console.log('DoSearchNow()');
+        value = $('#searchFor').val();
         $.ajax({
-            url: '/api/people/search?searchFor=' + el.value,
+            url: '/api/people/search?searchFor=' + value,
             success: function (resp) {
-                console.log('searched for', el.value, ', resp=', resp);
+                console.log('searched for', value, ', resp=', resp);
                 results = $('#results');
                 results.empty();
 
