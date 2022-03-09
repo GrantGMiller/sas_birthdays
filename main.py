@@ -16,6 +16,11 @@ app.config['SECRET_KEY'] = config.SECRET_KEY
 basedir = os.path.abspath(os.path.dirname(__file__))
 app.config['basedir'] = basedir
 
+app.config['STATIC_FOLDER'] = f'static'
+print("app.config['STATIC_FOLDER']=", app.config['STATIC_FOLDER'])
+app.config['STATIC_PATH'] = f'/static'
+print("app.config['STATIC_PATH']=", app.config['STATIC_PATH'])
+
 app.db = flask_dictabase.Dictabase(app)
 
 

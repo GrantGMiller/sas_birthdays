@@ -1,0 +1,27 @@
+{% extends "main.html" %}
+
+{% block body %}
+
+<div class='container'>
+
+    <div class='row'>
+        <div class='col font-weight-bolder badge badge-danger'>
+            An Error Has Occured
+        </div>
+    </div>
+
+    <div class='row'>
+        <div class='col'>
+            {{ message }}
+        </div>
+    </div>
+
+    <div class='row'>
+        <div class='col'>
+            <i>This has been reported to the admin.</i>
+        </div>
+    </div>
+
+
+</div>
+{% endblock %}
