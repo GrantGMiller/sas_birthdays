@@ -8,14 +8,12 @@
         <div class="row">
             <div class="col">
                 <input name="searchFor" type="text" class="form-control" id="searchFor"
-                    placeholder="Enter a name/company/email" onkeypress="DoSearch();">
+                    placeholder="Enter a name/company/email" onkeyup="DoSearch();">
             </div>
             <!-- <div class="col">
                     <input class="btn btn-primary mb-3" type="submit" value="Search">
                 </div> -->
         </div>
-
-
 
     </div>
     </form>
@@ -124,12 +122,19 @@
 
     function AppendCard(item) {
         d = new Date(item['date_of_birth_timestamp'] * 1000);
+        now = new Date();
+        console.log('d=', d);
+        console.log('now=', now);
+
+        bdayIsToday = ((now.getMonth() == d.getMonth() && now.getDate() == d.getDate()) ? '🎂' : '');
+        console.log('bdayIsToday=', bdayIsToday);
+
         console.log('d=', d);
         results.append(`
         <div class="card m-2" >
             <div class="card-body">
                 <h5 class="card-title">FIRST_NAME LAST_NAME</h5>
-                <p class="card-text">Birthday: DATE_OF_BIRTH</p>
+                <p class="card-text">Birthday: DATE_OF_BIRTH EMOJI</p>
                 <p class="card-text">Address: MAIL_ADDRESS</p>
                 <p class="card-text">Phone: PHONE_NUMBER</p> 
                 <p class="card-text">Email: EMAIL_ADDRESS</p>
@@ -142,6 +147,7 @@
         ).replace('PHONE_NUMBER', item['phone']
         ).replace('EMAIL_ADDRESS', item['email']
         ).replace('MAIL_ADDRESS', item['address']
+        ).replace('EMOJI', bdayIsToday
         )
         );
     }
