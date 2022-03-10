@@ -11,6 +11,7 @@ requests = "*"
 flask-dictabase = "*"
 flask-login-dictabase-blueprint = "*"
 pytest = "*"
+pillow-tools = "*"
 
 [requires]
 python_version = "3.8"

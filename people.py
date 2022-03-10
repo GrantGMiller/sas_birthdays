@@ -1,16 +1,14 @@
 import datetime
 import random
 import string
+import sys
 import uuid
-
 from flask_login_dictabase_blueprint import VerifyAdmin
 from flask_login_dictabase_blueprint.menu import AddMenuOption, GetMenu
-from flask import render_template, request, flash
+from flask import render_template, request, flash, send_file
 from flask_dictabase import BaseTable
 from pathlib import Path
 import csv
-
-from werkzeug.utils import redirect
 
 
 def Setup(a):
@@ -23,7 +21,7 @@ def Setup(a):
     app = a
     # create at least X ppl
     with app.app_context():
-        MIN_NUM_PEOPLE = 365 * 5
+        MIN_NUM_PEOPLE = 365 * (1 if sys.platform.startswith('win') else 5)
         totalPeople = 0
         for p in app.db.FindAll(Person):
             totalPeople += 1
@@ -58,6 +56,11 @@ def Setup(a):
         else:
             flash(f'No person found with uuid="{uuid}"', 'danger')
             return redirect('/')
+
+    @app.route('/people/face/<UUID>')
+    def PeopleFace(UUID):
+        person = app.db.FindOne(Person, uuid=UUID)
+        return send_file(person.thumbPath, as_attachment=True, )
 
 
 class Person(BaseTable):
@@ -114,6 +117,8 @@ class Person(BaseTable):
             elif key == 'date_of_birth':
                 ret['date_of_birth_iso'] = self[key].isoformat()
 
+        ret['imgSrc'] = self.imgSrc
+
         return ret
 
     @property
@@ -121,6 +126,20 @@ class Person(BaseTable):
         if not self.get('uuid', None):
             self['uuid'] = str(uuid.uuid4())
         return self['uuid']
+
+    @property
+    def imgPath(self):
+        p = Path(self.app.config['basedir']) / 'faces' / f'{self["id"] % 100}_face.png'
+        return p
+
+    @property
+    def thumbPath(self):
+        p = Path(self.app.config['basedir']) / 'faces' / f'{self["id"] % 100}_face_200x200.png'
+        return p
+
+    @property
+    def imgSrc(self):
+        return f'/people/face/{self.uuid}'
 
 
 def GetRandomPerson(index=None):
