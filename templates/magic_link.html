@@ -1,0 +1,22 @@
+{% extends "base.html" %}
+{% block body %}
+<div class="container column is-4 is-offset-4">
+    <h3 class="title">Magic Link</h3>
+    <p>{{ message }}</p>
+    <div class="box">
+        <form method="POST">
+            <div class="field">
+                <div class="control">
+                    <input class="input is-large" type="email" name="email" placeholder="Your Email" autofocus="">
+                </div>
+            </div>
+
+            <button class="btn is-block is-info is-large is-fullwidth">Get Magic Link</button>
+        </form>
+    </div>
+    <br><a href='/login'>Sign In</a>
+    <br><a href='/register'>New Here? Create an Account</a>
+    <br><a href='/forgot'>Forgot Password</a>
+</div>
+{% endblock %}
+        

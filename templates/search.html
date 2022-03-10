@@ -8,7 +8,8 @@
         <div class="row">
             <div class="col">
                 <input name="searchFor" type="text" class="form-control" id="searchFor"
-                    placeholder="Enter a name/company/email" onkeyup="DoSearch();">
+                    placeholder="Enter a name/company/email" onkeyup="DoSearch();" {% if initSearch %}
+                    value="{{ initSearch }}" {% endif %}>
             </div>
             <!-- <div class="col">
                     <input class="btn btn-primary mb-3" type="submit" value="Search">
@@ -157,6 +158,7 @@
                 <p class="card-text">Address: MAIL_ADDRESS</p>
                 <p class="card-text">Phone: PHONE_NUMBER</p> 
                 <p class="card-text">Email: EMAIL_ADDRESS</p>
+                {% if isAdmin %}<a class="btn btn-sm btn-danger" href="/people/delete/UUID">Delete</a>{% endif %}
             </div>
         </div>`.replace(
             'DATE_OF_BIRTH', d.getMonth() + 1 + '-' + d.getDate() + '-' + d.getFullYear()
@@ -166,10 +168,14 @@
         ).replace('PHONE_NUMBER', item['phone']
         ).replace('EMAIL_ADDRESS', item['email']
         ).replace('MAIL_ADDRESS', item['address']
+        ).replace('UUID', item['uuid']
         ).replace('EMOJI', bdayIsToday
         )
         );
     }
+    {% if initSearch %}
+    DoSearch();
+    {% endif %}
 </script>
 
 

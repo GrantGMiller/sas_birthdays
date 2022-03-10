@@ -1,9 +1,17 @@
 import datetime
 from urllib.parse import urlencode
 from flask import request, render_template, redirect
+from flask_login_dictabase_blueprint import IsAdmin
+
+from flask_login_dictabase_blueprint.menu import AddMenuOption, GetMenu
 
 
 def Setup(app):
+    AddMenuOption(
+        title='Search',
+        url='/search',
+    )
+
     @app.route('/search', methods=['GET', 'POST'])
     def Search():
         if request.method == 'POST':
@@ -11,6 +19,9 @@ def Setup(app):
 
         return render_template(
             'search.html',
+            menu=GetMenu('Search'),
+            initSearch=request.args.get('searchFor', None),
+            isAdmin=IsAdmin(),
         )
 
     @app.route('/search/today')
@@ -45,3 +56,4 @@ def Setup(app):
             'month': now.month,
         }
         return redirect(f'/api/people/search?{urlencode(kwargs)}')
+

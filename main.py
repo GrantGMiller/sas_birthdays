@@ -4,7 +4,7 @@ import sys
 import flask_dictabase
 import jinja2
 from flask import Flask, redirect, render_template, jsonify
-
+import flask_login_dictabase_blueprint
 import config
 import search
 import people
@@ -31,6 +31,8 @@ my_loader = jinja2.ChoiceLoader([
 app.jinja_loader = my_loader
 
 app.db = flask_dictabase.Dictabase(app)
+
+app.register_blueprint(flask_login_dictabase_blueprint.bp)
 
 
 @app.route('/')
@@ -68,4 +70,4 @@ people.Setup(app)
 api.Setup(app)
 
 if __name__ == '__main__':
-    app.run()  # debug=True)
+    app.run(debug=True)

@@ -1,0 +1,17 @@
+{% extends "base.html" %}
+
+{% block body %}
+<div class="container">
+    <h1> Add a user </h1>
+    <form method="POST">
+
+        {% for key, defaultValue in defaults.items() %}
+        <div class="form-group">
+            <label class="text-capitalize" for="{{key}}">{{key}}</label>
+            <input type="text" class="form-control" id="{{key}}" name="{{key}}" value="{{defaultValue}}">
+        </div>
+        {% endfor %}
+        <button type="submit" class="btn btn-primary">Save</button>
+    </form>
+</div>
+{% endblock %}
