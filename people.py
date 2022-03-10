@@ -208,8 +208,7 @@ def CreateNewPerson(data):
 def EditPerson(data):
     person = app.db.FindOne(
         Person,
-        first_name=data.get('first_name', None),
-        last_name=data.get('last_name', None)
+        uuid=data['uuid'],
     )
 
     # prevent injecting disallowed keys

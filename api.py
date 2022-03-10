@@ -9,32 +9,18 @@ import config
 import people
 
 
-def Setup(app):
+def Setup(a):
+    global app
+    app = a
+
     AddAdmin('grant@grant-miller.com')
 
-    @app.route('/api/people/search')
+    @app.route('/api/people/search', methods=['GET', 'POST'])
     def APIPeopleSearch():
         ret = []
         searchFor = request.args.get('searchFor', None)
-        print('searchFor=', searchFor)
         if searchFor:
-            searchFor = searchFor.lower()
-
-            # user should be able to type in multiple words, separate by space
-            # only results that have a match for each sub-word should be returned
-
-            subSearchFor = searchFor.split(' ')
-            for p in app.db.FindAll(people.Person):
-                numMatches = 0
-                for subSearch in subSearchFor:
-                    for value in p.values():
-                        if subSearch in str(value).lower():
-                            numMatches += 1
-                            break
-
-                if numMatches >= len(subSearchFor):
-                    # all the sub matches were found
-                    ret.append(p)
+            ret.extend(SearchFor(searchFor))
 
         elif 'month' in request.args or 'day' in request.args:
             searchMonth = int(request.args.get('month', 0))
@@ -77,6 +63,11 @@ def Setup(app):
             }
             return redirect(f'/api/people/search?{urlencode(kwargs)}')
 
+        elif request.form:
+            print('request.form=', request.form)
+            s = ' '.join(request.form.values())
+            ret.extend(SearchFor(s))
+
         return jsonify(list(r.UISafe() for r in ret))
 
     @app.post('/api/people/add')
@@ -99,8 +90,7 @@ def Setup(app):
         print('APIPeopleAdd request.form=', request.form)
         person = app.db.FindOne(
             people.Person,
-            first_name=request.form.get('first_name', None),
-            last_name=request.form.get('last_name', None)
+            uuid=request.form.get('uuid', None)
         )
         if person:
             app.db.Delete(person)
@@ -119,3 +109,33 @@ def VerifyAPIKey(func):
         return func(*a, **k)
 
     return VerifyAPIKeyWrapper
+
+
+def SearchFor(searchFor):
+    '''
+
+    :param searchFor: str
+    :return:
+    '''
+    ret = []
+    print('searchFor=', searchFor)
+    if searchFor:
+        with app.app_context():
+            searchFor = searchFor.lower()
+
+            # user should be able to type in multiple words, separate by space
+            # only results that have a match for each sub-word should be returned
+
+            subSearchFor = searchFor.split(' ')
+            for p in app.db.FindAll(people.Person):
+                numMatches = 0
+                for subSearch in subSearchFor:
+                    for value in p.values():
+                        if subSearch in str(value).lower():
+                            numMatches += 1
+                            break
+
+                if numMatches >= len(subSearchFor):
+                    # all the sub matches were found
+                    ret.append(p)
+    return ret
