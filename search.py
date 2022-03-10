@@ -1,9 +1,16 @@
 import datetime
+import json
+import uuid
+from io import BytesIO, StringIO
+from pathlib import Path
+from typing import TextIO
 from urllib.parse import urlencode
-from flask import request, render_template, redirect
+from flask import request, render_template, redirect, send_file
 from flask_login_dictabase_blueprint import IsAdmin
 
 from flask_login_dictabase_blueprint.menu import AddMenuOption, GetMenu
+
+from api import SearchFor
 
 
 def Setup(app):
@@ -57,3 +64,14 @@ def Setup(app):
         }
         return redirect(f'/api/people/search?{urlencode(kwargs)}')
 
+    @app.route('/search/export/<searchFor>')
+    def SearchExport(searchFor):
+        print('SearchExport(', searchFor)
+        results = SearchFor(searchFor, mode='or')
+        results = [r.UISafe() for r in results]
+        print('results=', results)
+        return send_file(
+            BytesIO(json.dumps(results, indent=2).encode()),
+            as_attachment=True,
+            download_name=f'{uuid.uuid4()}.json',
+        )

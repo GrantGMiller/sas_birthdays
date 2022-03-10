@@ -105,11 +105,15 @@ class Person(BaseTable):
                 'date_of_birth_timestamp',
                 'uuid',
             ]:
+                value = self.get(key, None)
+                if isinstance(value, (datetime.datetime,)):
+                    value = value.isoformat()
+
                 ret[key] = self.get(key, None)
 
             elif key == 'date_of_birth':
                 ret['date_of_birth_iso'] = self[key].isoformat()
-                ret[key] = self[key]
+
         return ret
 
     @property

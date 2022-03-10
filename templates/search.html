@@ -130,6 +130,9 @@
         results.empty();
 
         if (items.length > 0) {
+            uuids = ''
+            items.forEach(function (item) { uuids += item['uuid'] + ' ' });
+            results.append('<a href="/search/export/' + uuids + '" class="btn btn-sm btn-success">Export Results</a>')
             items.forEach(function (item) {
                 console.log('item=', item);
                 AppendCard(item);

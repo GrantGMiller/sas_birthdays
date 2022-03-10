@@ -111,10 +111,11 @@ def VerifyAPIKey(func):
     return VerifyAPIKeyWrapper
 
 
-def SearchFor(searchFor):
+def SearchFor(searchFor, mode='and'):
     '''
 
-    :param searchFor: str
+    :param searchFor: str > space-separated search string(s)
+    :param mode: str > should be 'and' or 'or' to indicate if the individual sub string must all match (and) or only one (or)
     :return:
     '''
     ret = []
@@ -135,7 +136,9 @@ def SearchFor(searchFor):
                             numMatches += 1
                             break
 
-                if numMatches >= len(subSearchFor):
+                if mode == 'and' and numMatches >= len(subSearchFor):
                     # all the sub matches were found
+                    ret.append(p)
+                elif mode == 'or' and numMatches >= 1:
                     ret.append(p)
     return ret
