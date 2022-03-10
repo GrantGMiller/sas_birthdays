@@ -23,7 +23,7 @@ def Setup(a):
     app = a
     # create at least X ppl
     with app.app_context():
-        MIN_NUM_PEOPLE = 365 * 3
+        MIN_NUM_PEOPLE = 365 * 5
         totalPeople = 0
         for p in app.db.FindAll(Person):
             totalPeople += 1

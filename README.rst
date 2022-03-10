@@ -4,6 +4,8 @@ Birthdays
 This project presents a simple web UI to look up employees.
 You can use the '/search' page to find employees by their name, company, birthday, or any other meta data.
 
+A live demo of this app is available at: https://sas.grant-miller.com/
+
 API
 ===
 An api is also supported to integrate with other tools.
