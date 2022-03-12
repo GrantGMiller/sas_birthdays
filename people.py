@@ -27,12 +27,12 @@ def Setup(a):
     JOB_NAME = 'Add More People'
     with app.app_context():
         for job in app.jobs.GetJobs():
-            if job['name'] == JOB_NAME or job['name'] == None:
+            if job['name'] == JOB_NAME or job['name'] is None:
                 job.Delete()
 
         job = app.jobs.RepeatJob(
             func=AddMorePeople,
-            minutes=10,
+            minutes=1,
             name=JOB_NAME,
         )
         print('job=', job)
