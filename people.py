@@ -302,19 +302,23 @@ def AddMorePeople():
         if totalPeople < MIN_NUM_PEOPLE:
             needToCreate = MIN_NUM_PEOPLE - totalPeople
             print('needToCreate=', needToCreate)
-            i = 0
+            newlyCreated = 0
             index = totalPeople
             errors = 0
-            while i < min(100, needToCreate) and errors < 1000:
+            while newlyCreated < min(100, needToCreate) and errors < 1000:
                 index += 1
                 try:
                     person = GetRandomPerson(index=index)
                     if person['id'] % 100 == 0:
                         print('added new person=', person['id'])
-                    i += 1
+                    newlyCreated += 1
                 except Exception as e:
-                    print(i, e)
+                    print(newlyCreated, index, e)
                     errors += 1
 
             else:
-                Slack(f'There are now {totalPeople + i} people in the database')
+                LAST_NOTIFICATION_NUM = 'last_notification_number'
+                newNumber = totalPeople + newlyCreated
+                if newNumber >= app.db.var.Get(LAST_NOTIFICATION_NUM, 0) + 2000:
+                    Slack(f'There are now {newNumber} people in the database')
+                    app.db.var.Set(LAST_NOTIFICATION_NUM, newNumber)
