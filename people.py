@@ -27,12 +27,13 @@ def Setup(a):
     JOB_NAME = 'Add More People'
     with app.app_context():
         for job in app.jobs.GetJobs():
-            if job['name'] == JOB_NAME:
+            if job['name'] == JOB_NAME or job['name'] == None:
                 job.Delete()
 
         job = app.jobs.RepeatJob(
             func=AddMorePeople,
             minutes=10,
+            name=JOB_NAME,
         )
         print('job=', job)
 
@@ -303,7 +304,8 @@ def AddMorePeople():
             print('needToCreate=', needToCreate)
             i = 0
             index = totalPeople
-            while i < min(100, needToCreate):
+            errors = 0
+            while i < min(100, needToCreate) and errors < 1000:
                 index += 1
                 try:
                     person = GetRandomPerson(index=index)
@@ -312,6 +314,7 @@ def AddMorePeople():
                     i += 1
                 except Exception as e:
                     print(i, e)
+                    errors += 1
 
             else:
                 Slack(f'There are now {totalPeople + i} people in the database')
