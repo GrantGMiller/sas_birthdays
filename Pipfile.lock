@@ -1,7 +1,7 @@
 {
     "_meta": {
         "hash": {
-            "sha256": "f308647fa0cdf4e9968012b4f89f8dd1e585c676c8d38db661f8078b4581957b"
+            "sha256": "111a08b5c6a15f69b61ed131745c87273ffbe7b2137505aa92b9bd7cc7b46f1a"
         },
         "pipfile-spec": 6,
         "requires": {
@@ -72,7 +72,7 @@
                 "sha256:5941b2b48a20143d2267e95b1c2a7603ce057ee39fd88e7329b0c292aa16869b",
                 "sha256:9f47eda37229f68eee03b24b9748937c7dc3868f906e8ba69fbcbdd3bc5dc3e2"
             ],
-            "markers": "platform_system == 'Windows'",
+            "markers": "sys_platform == 'win32'",
             "version": "==0.4.4"
         },
         "dataset": {
@@ -98,11 +98,11 @@
         },
         "flask-dictabase": {
             "hashes": [
-                "sha256:55a99f28192f2ba326f9bd022d945928035d7e529bf9bb65cdd0cab4670e7a75",
-                "sha256:cc330e800097a30863a8b91d4f4fa317788992dfb9f1d55af548edfbe36a6b30"
+                "sha256:65af764fefa2a0fa56a0c5c3090d901e1931662ccc88f726be7360139ae3d917",
+                "sha256:884e310965fdd445136ce4eb52000f44cee150056d50431ab2797a0ef659333c"
             ],
             "index": "pypi",
-            "version": "==1.2.1"
+            "version": "==1.2.3"
         },
         "flask-login": {
             "hashes": [

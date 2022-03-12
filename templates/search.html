@@ -11,9 +11,6 @@
                     placeholder="Enter a name/company/email" onkeyup="DoSearch();" {% if initSearch %}
                     value="{{ initSearch }}" {% endif %}>
             </div>
-            <!-- <div class="col">
-                    <input class="btn btn-primary mb-3" type="submit" value="Search">
-                </div> -->
         </div>
 
     </div>
@@ -29,24 +26,24 @@
     </div>
 </div>
 <hr>
-<div class="container" id="results">
-
-</div>
-
+<div class="container" id="results"></div>
 
 
 <script>
+    // a timeout is used to act as a low-pass-filter.
+    // if the user types 10 letters quickly, we dont need to do 10 searches.
+    // wait until the user has stopped typing for X seconds, then execute the search
     let t = setTimeout(function () { }, 10000);
     clearTimeout(t);
 
     function ShowLoadingIcon() {
-        console.log('ShowLoadingIcon();');
-        results = $('#results');
-        results.empty();
-        results.append('<img class="img-fluid w-25" src="/static/loadingdots2.gif">');
+        // let the user know we are processing their search
+        console.log(' ShowLoadingIcon();'); results = $('#results'); results.empty(); results.append(`<img
+        class= "img-fluid w-25" src = "/static/loadingdots2.gif" > `);
     }
 
     function DoSearch() {
+        // reset the timeout
         console.log('DoSearch()');
         ShowLoadingIcon();
         clearTimeout(t);
@@ -54,13 +51,16 @@
     }
 
     function DoSearchNow() {
+        // actually perform the search
         console.log('DoSearchNow()');
         ShowLoadingIcon();
 
 
         value = $('#searchFor').val();
         $.ajax({
-            url: '/api/people/search?searchFor=' + value,
+            type: 'POST',
+            url: '/api/people/search',
+            data: { searchFor: value },
             success: function (resp) {
                 console.log('searched for', value, ', resp=', resp);
                 DrawCards(resp);
@@ -71,12 +71,20 @@
         })
     }
 
+
     function Today() {
+        // a preset to search for birthdays happening today
         console.log('Today()');
         ShowLoadingIcon();
         d = new Date();
+        console.log('Current time is=', d);
         $.ajax({
-            url: '/api/people/search?month=' + String(d.getMonth() + 1) + '&day=' + d.getDate(),
+            type: 'POST',
+            url: '/api/people/search',
+            data: {
+                month: String(d.getMonth() + 1),
+                day: d.getDate()
+            },
             success: function (resp) {
                 console.log('searched for today, resp=', resp);
                 DrawCards(resp);
@@ -89,10 +97,13 @@
     }
 
     function ThisWeek() {
+        // a preset to find birthdays for this week
         console.log('ThisWeek()');
         ShowLoadingIcon();
         $.ajax({
-            url: '/api/people/search?thisWeek=true',
+            type: 'POST',
+            url: '/api/people/search',
+            data: { thisWeek: true },
             success: function (resp) {
                 console.log('searched for today, resp=', resp);
                 DrawCards(resp);
@@ -104,11 +115,14 @@
     }
 
     function ThisMonth() {
+        // a preset to find birthdays for this month
         console.log('Today()');
         ShowLoadingIcon();
         let d = new Date();
         $.ajax({
-            url: '/api/people/search?month=' + String(d.getMonth() + 1),
+            type: 'POST',
+            url: '/api/people/search',
+            data: { month: String(d.getMonth() + 1) },
             success: function (resp) {
                 console.log('searched for today, resp=', resp);
                 DrawCards(resp);
@@ -121,52 +135,70 @@
     }
 
     function ShowError() {
+        // let the user know something went wrong
         results = $('#results');
         results.empty();
         results.append('<i>Something went wrong. Try Again.</i>');
     }
-    function DrawCards(items) {
+
+    function DrawCards(resp) {
+        // takes a api response and draws the results as cards on the page
+        console.log('DrawCards(resp=', resp);
+        items = resp['results'];
         results = $('#results');
         results.empty();
 
         if (items.length > 0) {
             uuids = ''
             items.forEach(function (item) { uuids += item['uuid'] + ' ' });
-            results.append('<a href="/search/export/' + uuids + '" class="btn btn-sm btn-success">Export Results</a>')
+            results.append("<button onclick='ExportResults(" + JSON.stringify(resp['search_params']) + ")' class='btn btn-sm btn-success'>Export Results</button>");
 
             items.forEach(function (item) {
-                console.log('item=', item);
+                //console.log('item=', item);
                 AppendCard(item);
             })
+
+            lastItem = items[items.length - 1];
+            cmd = 'LoadMore(' + JSON.stringify(resp['search_params']) + ', ' + Number(resp['offset'] + items.length)
+                + ")";
+            console.log('cmd=', cmd);
+            $('#img_card_' + lastItem['uuid']).attr('onload', cmd);
+
+            // add a 'load more' button
+            results.append(`<button id='btn_load_more' class='btn btn-secondary'
+            onclick = 'LoadMore(` + JSON.stringify(resp['search_params']) + ', ' + Number(resp['offset'] + items.length)
+                + ");'>more</button>");
+
+
         } else {
             results.append('<i>no results</i>');
         }
     }
 
-
     function AppendCard(item) {
-        d = new Date(item['date_of_birth_timestamp'] * 1000);
+        // add a single result card to the page
+        d = new Date((item['date_of_birth_timestamp'] * 1000) + 1);
         now = new Date();
-        console.log('d=', d);
-        console.log('now=', now);
+        //console.log('d=', d);
+        //console.log('now=', now);
 
-        bdayIsToday = ((now.getMonth() == d.getMonth() && now.getDate() == d.getDate()) ? '🎂' : '');
-        console.log('bdayIsToday=', bdayIsToday);
+        bdayIsToday = ((now.getMonth() == d.getUTCMonth() && now.getDate() == d.getUTCDate()) ? '🎂' : '');
+        //console.log('bdayIsToday=', bdayIsToday);
 
-        console.log('d=', d);
+        //console.log('d=', d);
         results.append(`
-        <div class="card m-2" >
+        <div class="card m-2">
             <h5 class="card-header">FIRST_NAME LAST_NAME</h5>
             <div class="card-body">
-                <img src="IMG_SRC" style='max-height:200px' loading="lazy">
+                <img id='img_card_UUID' src="IMG_SRC" style='max-height:150px' loading="lazy" class='img-thumbnail rounded' onload='console.log(\"img loaded\")'>
                 <p class="card-text">Birthday: DATE_OF_BIRTH EMOJI</p>
                 <p class="card-text">Address: MAIL_ADDRESS</p>
-                <p class="card-text">Phone: PHONE_NUMBER</p> 
+                <p class="card-text">Phone: PHONE_NUMBER</p>
                 <p class="card-text">Email: EMAIL_ADDRESS</p>
                 {% if isAdmin %}<a class="btn btn-sm btn-danger" href="/people/delete/UUID">Delete</a>{% endif %}
             </div>
         </div>`.replace(
-            'DATE_OF_BIRTH', d.getMonth() + 1 + '-' + d.getDate() + '-' + d.getFullYear()
+            'DATE_OF_BIRTH', d.getUTCMonth() + 1 + '-' + d.getUTCDate() + '-' + d.getFullYear()
         ).replace('FIRST_NAME', item['first_name']
         ).replace('LAST_NAME', item['last_name']
         ).replace('PHONE_NUMBER', item['phone']
@@ -178,9 +210,69 @@
         )
         );
     }
-    {% if initSearch %}
-    DoSearch();
-    {% endif %}
+
+    function LoadMore(searchParams, newOffset) {
+        // when the user reaches the last result in the UI, a call is made to the server for more results
+        // if server returns more restuls, draw them
+        console.log('LoadMore(', searchParams, ', newOffset=', newOffset);
+        searchParams['offset'] = newOffset;
+        $.ajax({
+            type: 'POST',
+            url: '/api/people/search',
+            data: searchParams,
+            success: function (resp) {
+                console.log('LoadMore resp=', resp);
+                $('#btn_load_more').remove();
+                items = resp['results']
+                if (items.length > 0) {
+
+                    items.forEach(AppendCard);
+
+                    lastItem = items[items.length - 1];
+                    console.log('lastItem=', lastItem);
+                    cmd = 'LoadMore(' + JSON.stringify(resp['search_params']) + ', ' + Number(resp['offset'] + items.length)
+                        + ")";
+                    console.log('cmd=', cmd);
+                    $('#img_card_' + lastItem['uuid']).attr('onload', cmd);
+
+                    $('#results').append(`<button id='btn_load_more' class='btn btn-secondary'
+                onclick = 'LoadMore(` + JSON.stringify(resp['search_params']) + ', ' + Number(resp['offset'] + items.length)
+                        + ");'>more</button>");
+                } else {
+                    console.log('no more restuls');
+                }
+            },
+            error: function (resp) {
+                ShowError();
+            }
+        })
+    }
+
+    function ExportResults(search) {
+        search['export'] = true;
+
+        $.ajax({
+            type: 'POST',
+            url: '/api/people/search',
+            data: search,
+            success: function (resp) {
+
+                // save the file to disk - credit to https://stackoverflow.com/questions/11071473/how-can-javascript-save-to-a-local-file
+                var bb = new Blob([JSON.stringify(resp)], { type: 'text/json' });
+                var a = document.createElement('a');
+                a.download = 'download.txt';
+                a.href = window.URL.createObjectURL(bb);
+                a.click();
+                console.log('file saved');
+            }
+        });
+
+    }
+
+    if ($('#searchFor').val()) {
+        DoSearch();
+    }
+
 </script>
 
 

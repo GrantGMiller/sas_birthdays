@@ -2,6 +2,7 @@ import datetime
 import functools
 import random
 import string
+import time
 from urllib.parse import urlencode
 from flask import request, redirect, jsonify
 from flask_login_dictabase_blueprint import AddAdmin
@@ -17,58 +18,89 @@ def Setup(a):
 
     @app.route('/api/people/search', methods=['GET', 'POST'])
     def APIPeopleSearch():
+        print('APIPeopleSearch()', request.method, 'request.form=', request.form)
+        export = request.form.get('export', False)
+        export = {'true': True}.get(export, False)
+        print('export=', export)
+
+        startTime = time.time()
+        MAX_RESULTS_PER_PAGE = 15
+        offset = int(request.form.get('offset', 0))
+        print('offset=', offset)
         ret = []
-        searchFor = request.args.get('searchFor', None)
-        if searchFor:
-            ret.extend(SearchFor(searchFor))
+        if 'month' in request.form:
+            searchMonth = int(request.form['month'])
+            if 'day' in request.form:
+                searchDay = int(request.form['day'])
+                ret = app.db.FindAll(
+                    people.Person,
+                    _where='birth_month', _equals=searchMonth,
+                    __where='birth_day', __equals=searchDay,
 
-        elif 'month' in request.args or 'day' in request.args:
-            searchMonth = int(request.args.get('month', 0))
-            searchDay = int(request.args.get('day', 0))
-            for p in app.db.FindAll(people.Person):
-                if searchMonth and searchDay:
-                    if p['date_of_birth'].month == searchMonth and \
-                            p['date_of_birth'].day == searchDay:
-                        ret.append(p)
-                elif searchMonth:
-                    if p['date_of_birth'].month == searchMonth:
-                        ret.append(p)
-                elif searchDay:
-                    if p['date_of_birth'].day == searchDay:
-                        ret.append(p)
+                    _limit=None if export else MAX_RESULTS_PER_PAGE,
+                    _offset=None if export else offset,
+                )
+            else:
+                ret = app.db.FindAll(
+                    people.Person,
+                    _where='birth_month', _equals=searchMonth,
 
-        elif 'start_month' in request.args:
-            startMonth = int(request.args.get('start_month', 0))
-            startDay = int(request.args.get('start_day', 0))
-            endMonth = int(request.args.get('end_month', 0))
-            endDay = int(request.args.get('end_day', 0))
+                    _limit=None if export else MAX_RESULTS_PER_PAGE,
+                    _offset=None if export else offset,
+                )
+        elif 'day' in request.form:
+            searchDay = int(request.form['day'])
+            ret = app.db.FindAll(
+                people.Person,
+                _where='birth_day', _equals=searchDay,
 
-            for p in app.db.FindAll(people.Person):
-                if startMonth <= p['date_of_birth'].month <= endMonth:
-                    if startDay <= p['date_of_birth'].day <= endDay:
-                        ret.append(p)
+                _limit=None if export else MAX_RESULTS_PER_PAGE,
+                _offset=None if export else offset,
+            )
 
-        elif 'thisWeek' in request.args:
+        elif 'thisWeek' in request.form:
             now = datetime.datetime.now()
             startDT = now - datetime.timedelta(days=now.weekday())
             endDT = startDT + datetime.timedelta(days=7)
             print('now=', now)
             print('startDT=', startDT)
             print('endDT=', endDT)
-            kwargs = {
-                'start_month': startDT.month,
-                'start_day': startDT.day,
-                'end_month': endDT.month,
-                'end_day': endDT.day,
-            }
-            return redirect(f'/api/people/search?{urlencode(kwargs)}')
 
-        elif request.form:
-            print('request.form=', request.form)
-            s = ' '.join(request.form.values())
-            ret.extend(SearchFor(s))
+            if endDT.month > startDT.month:
+                # todo - deal with when 'endDT' is in the next month
+                pass
+            else:
+                ret = app.db.FindAll(
+                    people.Person,
+                    _where='birth_month', _greaterThanOrEqualTo=startDT.month,
+                    __where='birth_day', __greaterThanOrEqualTo=startDT.day,
 
-        return jsonify(list(r.UISafe() for r in ret))
+                    ___where='birth_month', ___lessThanOrEqualTo=endDT.month,
+                    ____where='birth_day', ____lessThanOrEqualTo=endDT.day,
+
+                    _limit=None if export else MAX_RESULTS_PER_PAGE,
+                    _offset=None if export else offset,
+                )
+
+        elif 'searchFor' in request.form:
+            ret = SearchFor(
+                request.form['searchFor'],
+                _limit=None if export else MAX_RESULTS_PER_PAGE,
+                _offset=None if export else offset,
+            )
+
+        endTime = time.time()
+        pageNum = int(offset / MAX_RESULTS_PER_PAGE)
+        ret = {
+            'offset': offset,
+            'max_results_per_page': MAX_RESULTS_PER_PAGE,
+            'pageNum': pageNum,
+            'search_params': request.form,
+            'results': list(r.UISafe() for r in ret),
+            'search_time_seconds': endTime - startTime,
+        }
+        print("len(ret['results'])=", len(ret['results']))
+        return jsonify(ret)
 
     @app.post('/api/people/add')
     @VerifyAPIKey
@@ -111,34 +143,34 @@ def VerifyAPIKey(func):
     return VerifyAPIKeyWrapper
 
 
-def SearchFor(searchFor, mode='and'):
+def SearchFor(searchFor, _limit=None, _offset=None):
     '''
 
     :param searchFor: str > space-separated search string(s)
     :param mode: str > should be 'and' or 'or' to indicate if the individual sub string must all match (and) or only one (or)
     :return:
     '''
-    ret = []
     print('searchFor=', searchFor)
     if searchFor:
-        with app.app_context():
-            searchFor = searchFor.lower()
+        # q = f"SELECT * FROM Person WHERE first_name LIKE '%{searchFor}%'";
+        sub = ''
+        cols = app.db.db['Person'].columns
 
-            # user should be able to type in multiple words, separate by space
-            # only results that have a match for each sub-word should be returned
+        s = ''
+        for index, subString in enumerate(searchFor.split(' ')):
+            if index > 0:
+                s += ' or '
+            s += ' or '.join(f"{col} LIKE '%{subString}%'" for col in cols)
 
-            subSearchFor = searchFor.split(' ')
-            for p in app.db.FindAll(people.Person):
-                numMatches = 0
-                for subSearch in subSearchFor:
-                    for value in p.values():
-                        if subSearch in str(value).lower():
-                            numMatches += 1
-                            break
+        q = f"SELECT * FROM Person WHERE {s}"
+        if _limit:
+            q += f' LIMIT {_limit}'
+        if _offset:
+            q += f' OFFSET {_offset}'
 
-                if mode == 'and' and numMatches >= len(subSearchFor):
-                    # all the sub matches were found
-                    ret.append(p)
-                elif mode == 'or' and numMatches >= 1:
-                    ret.append(p)
-    return ret
+        print('q=', q)
+        r = app.db.db.query(q)
+        for item in r:
+            # print('item=', item)
+            item['date_of_birth'] = datetime.datetime.fromisoformat(item['date_of_birth'])
+            yield people.Person(db=app.db, app=app, **item)

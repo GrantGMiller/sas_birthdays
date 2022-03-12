@@ -64,14 +64,4 @@ def Setup(app):
         }
         return redirect(f'/api/people/search?{urlencode(kwargs)}')
 
-    @app.route('/search/export/<searchFor>')
-    def SearchExport(searchFor):
-        print('SearchExport(', searchFor)
-        results = SearchFor(searchFor, mode='or')
-        results = [r.UISafe() for r in results]
-        print('results=', results)
-        return send_file(
-            BytesIO(json.dumps(results, indent=2).encode()),
-            as_attachment=True,
-            download_name=f'{uuid.uuid4()}.json',
-        )
+

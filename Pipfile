@@ -8,7 +8,7 @@ verify_ssl = true
 [packages]
 flask = "*"
 requests = "*"
-flask-dictabase = "*"
+flask-dictabase = "==1.2.3"
 flask-login-dictabase-blueprint = "*"
 pytest = "*"
 pillow-tools = "*"

@@ -5,7 +5,7 @@ import sys
 import uuid
 from flask_login_dictabase_blueprint import VerifyAdmin
 from flask_login_dictabase_blueprint.menu import AddMenuOption, GetMenu
-from flask import render_template, request, flash, send_file
+from flask import render_template, request, flash, send_file, redirect, jsonify
 from flask_dictabase import BaseTable
 from pathlib import Path
 import csv
@@ -21,17 +21,20 @@ def Setup(a):
     app = a
     # create at least X ppl
     with app.app_context():
-        MIN_NUM_PEOPLE = 365 * (1 if sys.platform.startswith('win') else 5)
+        MIN_NUM_PEOPLE = 365 * 50
+        print('MIN_NUM_PEOPLE=', MIN_NUM_PEOPLE)
         totalPeople = 0
         for p in app.db.FindAll(Person):
             totalPeople += 1
-            p.uuid  # make sure each one has a uuid
 
+        print('totalPeople=', totalPeople)
         if totalPeople < MIN_NUM_PEOPLE:
             needToCreate = MIN_NUM_PEOPLE - totalPeople
-            for i in range(needToCreate):
-                person = GetRandomPerson(index=needToCreate + i)
-                print('added new person=', person)
+            print('needToCreate=', needToCreate)
+            for i in range(min(100, needToCreate)):
+                person = GetRandomPerson(index=totalPeople + i)
+                if person['id'] % 100 == 0:
+                    print('added new person=', person['id'])
 
     @app.route('/people/add', methods=['GET', 'POST'])
     def PeopleAdd():
@@ -62,16 +65,24 @@ def Setup(a):
         person = app.db.FindOne(Person, uuid=UUID)
         return send_file(person.thumbPath, as_attachment=True, )
 
+    @app.route('/people/test')
+    def PeopleTest():
+        ret = app.db.db.query(f"SELECT * FROM Person WHERE first_name = 'Bob' LIMIT 2;", _limit=2)
+        print('ret=', ret)
+        return jsonify(list(ret))
+
 
 class Person(BaseTable):
+    def __init(self, *a, **k):
+        super().__init__(*a, **k)
+        self.uuid
+        self['birth_year'] = self['date_of_birth'].year
+        self['birth_month'] = self['date_of_birth'].month
+        self['birth_day'] = self['date_of_birth'].day
+
     @classmethod
     def GetRandom(cls):
-        dob_month = random.randint(1, 12)
-        dobDT = datetime.date(
-            year=random.randint(1970, 2015),
-            month=dob_month,
-            day=random.randint(1, 30 if dob_month in [9, 4, 6, 11] else 31 if dob_month != 2 else 28),
-        )
+        dobDT = GetRandomDatetime()
         defaults = {
             'first_name': random.choice(string.ascii_uppercase),
             'last_name': random.choice(string.ascii_uppercase),
@@ -106,6 +117,9 @@ class Person(BaseTable):
                 'email',
                 'website',
                 'date_of_birth_timestamp',
+                'birth_month',
+                'birth_day',
+                'birth_year',
                 'uuid',
             ]:
                 value = self.get(key, None)
@@ -130,11 +144,15 @@ class Person(BaseTable):
     @property
     def imgPath(self):
         p = Path(self.app.config['basedir']) / 'faces' / f'{self["id"] % 100}_face.png'
+        if not p.exists():
+            return 'https://thispersondoesnotexist.com'
         return p
 
     @property
     def thumbPath(self):
         p = Path(self.app.config['basedir']) / 'faces' / f'{self["id"] % 100}_face_200x200.png'
+        if not p.exists():
+            return 'https://thispersondoesnotexist.com'
         return p
 
     @property
@@ -149,14 +167,9 @@ def GetRandomPerson(index=None):
         reader = csv.reader(file)
         for thisIndex, row in enumerate(reader):
             if index == thisIndex:
-                dob_month = random.randint(1, 12)
-                dobDT = datetime.datetime(
-                    year=random.randint(1970, 2015),
-                    month=dob_month,
-                    day=random.randint(1, 30 if dob_month in [9, 4, 6, 11] else 31 if dob_month != 2 else 28),
-                )
-                print('dobDT=', dobDT, type(dobDT))
-                print('timestamp=', dobDT.timestamp())
+                dobDT = GetRandomDatetime()
+                # print('dobDT=', dobDT, type(dobDT))
+                # print('timestamp=', dobDT.timestamp())
 
                 d = {
                     'first_name': row[0],
@@ -174,7 +187,7 @@ def GetRandomPerson(index=None):
                     'date_of_birth': dobDT,
                     'date_of_birth_timestamp': dobDT.timestamp()
                 }
-                return app.db.New(Person, **d)
+                return CreateNewPerson(d)
 
 
 def CreateNewPerson(data):
@@ -202,29 +215,29 @@ def CreateNewPerson(data):
             'email',
             'website',
         ]:
-            if request.form.get(key, None):
-                kwargs[key] = request.form.get(key)
+            if data.get(key, None):
+                kwargs[key] = data.get(key)
             else:
                 kwargs[key] = defaults[key]
 
-        if 'date_of_birth_iso' in request.form:
+        if 'date_of_birth_iso' in data:
             print('using form bday')
-            kwargs['date_of_birth'] = datetime.datetime.fromisoformat(request.form['date_of_birth_iso'])
+            kwargs['date_of_birth'] = datetime.datetime.fromisoformat(data['date_of_birth_iso'])
             kwargs['date_of_birth_timestamp'] = kwargs['date_of_birth'].timestamp()
+
         else:
             # make a random bday
-            dob_month = random.randint(1, 12)
-            dobDT = datetime.datetime(
-                year=random.randint(1970, 2015),
-                month=dob_month,
-                day=random.randint(1, 30 if dob_month in [9, 4, 6, 11] else 31 if dob_month != 2 else 28),
-            )
+            dobDT = GetRandomDatetime()
             kwargs['date_of_birth'] = dobDT
             kwargs['date_of_birth_timestamp'] = dobDT.timestamp()
 
-        print('kwargs=', kwargs)
+        kwargs['birth_month'] = kwargs['date_of_birth'].month
+        kwargs['birth_day'] = kwargs['date_of_birth'].day
+        kwargs['birth_year'] = kwargs['date_of_birth'].year
+
+        # print('kwargs=', kwargs)
         new = app.db.New(Person, **kwargs)
-        print('new=', new)
+        # print('new=', new)
         return new
 
 
@@ -260,3 +273,13 @@ def EditPerson(data):
     dobDT = person['date_of_birth']
     person['date_of_birth_timestamp'] = dobDT.timestamp()
     return person
+
+
+def GetRandomDatetime():
+    dob_month = random.randint(1, 12)
+    dobDT = datetime.datetime(
+        year=random.randint(1971, 2015),
+        month=dob_month,
+        day=random.randint(1, 30 if dob_month in [9, 4, 6, 11] else 31 if dob_month != 2 else 28),
+    )
+    return dobDT
