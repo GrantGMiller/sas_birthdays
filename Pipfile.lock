@@ -1,7 +1,7 @@
 {
     "_meta": {
         "hash": {
-            "sha256": "111a08b5c6a15f69b61ed131745c87273ffbe7b2137505aa92b9bd7cc7b46f1a"
+            "sha256": "014f0ba87ad8252adefec1cad3563a8ffa7125043abb02cd71a6afc18ebe71c2"
         },
         "pipfile-spec": 6,
         "requires": {
@@ -72,7 +72,7 @@
                 "sha256:5941b2b48a20143d2267e95b1c2a7603ce057ee39fd88e7329b0c292aa16869b",
                 "sha256:9f47eda37229f68eee03b24b9748937c7dc3868f906e8ba69fbcbdd3bc5dc3e2"
             ],
-            "markers": "sys_platform == 'win32'",
+            "markers": "platform_system == 'Windows'",
             "version": "==0.4.4"
         },
         "dataset": {
@@ -103,6 +103,14 @@
             ],
             "index": "pypi",
             "version": "==1.2.3"
+        },
+        "flask-jobs": {
+            "hashes": [
+                "sha256:9f23798dad732f1f835d72000d55a975a5dd13d229d8aff9e576be9a7ead2631",
+                "sha256:fc77576e0018527248bcc4a4dac90c616bc8b9b8995840e717bb5003e4f3bcec"
+            ],
+            "index": "pypi",
+            "version": "==1.0.14"
         },
         "flask-login": {
             "hashes": [
@@ -360,6 +368,19 @@
             "index": "pypi",
             "version": "==7.0.1"
         },
+        "python-crontab": {
+            "hashes": [
+                "sha256:1e35ed7a3cdc3100545b43e196d34754e6551e7f95e4caebbe0e1c0ca41c2f1b"
+            ],
+            "version": "==2.6.0"
+        },
+        "python-dateutil": {
+            "hashes": [
+                "sha256:0123cacc1627ae19ddf3c27a5de5bd67ee4586fbdd6440d9748f8abb483d3e86",
+                "sha256:961d03dc3453ebbc59dbdea9e4e11c5651520a876d0f4db161e8674aae935da9"
+            ],
+            "version": "==2.8.2"
+        },
         "requests": {
             "hashes": [
                 "sha256:68d7c56fd5a8999887728ef304a6d12edc7be74f1cfa47714fc8b414525c9a61",
@@ -367,6 +388,13 @@
             ],
             "index": "pypi",
             "version": "==2.27.1"
+        },
+        "six": {
+            "hashes": [
+                "sha256:1e61c37477a1626458e36f7b1d82aa5c9b094fa4802892072e49de9c60c4c926",
+                "sha256:8abb2f1d86890a2dfb989f9a77cfcfd3e47c2a354b01111771326f8aa26e0254"
+            ],
+            "version": "==1.16.0"
         },
         "sqlalchemy": {
             "hashes": [

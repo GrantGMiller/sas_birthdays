@@ -10,6 +10,7 @@ import search
 import people
 import api
 from slack import Slack
+import flask_jobs
 
 app = Flask('SAS Birthdays')
 app.config['SECRET_KEY'] = config.SECRET_KEY
@@ -31,6 +32,11 @@ my_loader = jinja2.ChoiceLoader([
 app.jinja_loader = my_loader
 
 app.db = flask_dictabase.Dictabase(app)
+jobs = flask_jobs.JobScheduler(
+    app,
+    SERVER_HOST_URL='https://sas.grant-miller.com/',  # only required for linux
+    deleteOldJobs=True,  # whether to keep old jobs in the database
+)
 
 app.register_blueprint(flask_login_dictabase_blueprint.bp)
 

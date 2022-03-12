@@ -10,6 +10,8 @@ from flask_dictabase import BaseTable
 from pathlib import Path
 import csv
 
+from slack import Slack
+
 
 def Setup(a):
     AddMenuOption(
@@ -19,22 +21,20 @@ def Setup(a):
     )
     global app
     app = a
-    # create at least X ppl
-    with app.app_context():
-        MIN_NUM_PEOPLE = 365 * 50
-        print('MIN_NUM_PEOPLE=', MIN_NUM_PEOPLE)
-        totalPeople = 0
-        for p in app.db.FindAll(Person):
-            totalPeople += 1
 
-        print('totalPeople=', totalPeople)
-        if totalPeople < MIN_NUM_PEOPLE:
-            needToCreate = MIN_NUM_PEOPLE - totalPeople
-            print('needToCreate=', needToCreate)
-            for i in range(min(100, needToCreate)):
-                person = GetRandomPerson(index=totalPeople + i)
-                if person['id'] % 100 == 0:
-                    print('added new person=', person['id'])
+    AddMorePeople()
+
+    JOB_NAME = 'Add More People'
+    with app.app_context():
+        for job in app.jobs.GetJobs():
+            if job['name'] == JOB_NAME:
+                job.Delete()
+
+        job = app.jobs.RepeatJob(
+            func=AddMorePeople,
+            minutes=10,
+        )
+        print('job=', job)
 
     @app.route('/people/add', methods=['GET', 'POST'])
     def PeopleAdd():
@@ -192,11 +192,13 @@ def GetRandomPerson(index=None):
 
 def CreateNewPerson(data):
     with app.app_context():
-        if app.db.FindOne(
-                Person,
-                first_name=data.get('first_name', None),
-                last_name=data.get('last_name', None)
-        ):
+        existingPerson = app.db.FindOne(
+            Person,
+            first_name=data.get('first_name', None),
+            last_name=data.get('last_name', None)
+        )
+        if existingPerson:
+            print('existingPerson=', existingPerson)
             raise KeyError('This person already exist. Use /api/people/edit instead')
 
         kwargs = {}
@@ -283,3 +285,33 @@ def GetRandomDatetime():
         day=random.randint(1, 30 if dob_month in [9, 4, 6, 11] else 31 if dob_month != 2 else 28),
     )
     return dobDT
+
+
+def AddMorePeople():
+    print('AddMorePeople')
+    # create at least X ppl
+    with app.app_context():
+        MIN_NUM_PEOPLE = 365 * 100
+        print('MIN_NUM_PEOPLE=', MIN_NUM_PEOPLE)
+        totalPeople = 0
+        for p in app.db.FindAll(Person):
+            totalPeople += 1
+
+        print('totalPeople=', totalPeople)
+        if totalPeople < MIN_NUM_PEOPLE:
+            needToCreate = MIN_NUM_PEOPLE - totalPeople
+            print('needToCreate=', needToCreate)
+            i = 0
+            index = totalPeople
+            while i < min(100, needToCreate):
+                index += 1
+                try:
+                    person = GetRandomPerson(index=index)
+                    if person['id'] % 100 == 0:
+                        print('added new person=', person['id'])
+                    i += 1
+                except Exception as e:
+                    print(i, e)
+
+            else:
+                Slack(f'There are now {totalPeople + i} people in the database')

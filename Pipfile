@@ -12,6 +12,7 @@ flask-dictabase = "==1.2.3"
 flask-login-dictabase-blueprint = "*"
 pytest = "*"
 pillow-tools = "*"
+flask-jobs = "*"
 
 [requires]
 python_version = "3.8"
