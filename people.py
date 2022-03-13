@@ -30,12 +30,12 @@ def Setup(a):
             if job['name'] == JOB_NAME or job['name'] is None:
                 job.Delete()
 
-        job = app.jobs.RepeatJob(
-            func=AddMorePeople,
-            minutes=1,
-            name=JOB_NAME,
-        )
-        print('job=', job)
+        # job = app.jobs.RepeatJob(
+        #     func=AddMorePeople,
+        #     minutes=1,
+        #     name=JOB_NAME,
+        # )
+        # print('job=', job)
 
     @app.route('/people/add', methods=['GET', 'POST'])
     def PeopleAdd():
