@@ -40,7 +40,6 @@ def Setup(a):
         offset = int(request.form.get('offset', 0))
         print('offset=', offset)
 
-        ret = []
         if 'month' in request.form:
             searchMonth = int(request.form['month'])
             if 'day' in request.form:
@@ -82,6 +81,8 @@ def Setup(a):
             print('endDT=', endDT)
 
             if endDT.month > startDT.month:
+                # the week crosses into a new month, so the query has to be a little
+                #   more specific
                 s = f'(birth_month == {startDT.month} and birth_day >= {startDT.day})'
                 s += ' or '
                 s += f'(birth_month == {endDT.month} and birth_day <= {endDT.day})'
@@ -118,6 +119,7 @@ def Setup(a):
                 _offset=None if export else offset,
             )
 
+        # return the results
         pageNum = int(offset / MAX_RESULTS_PER_PAGE)
         ret = {
             'offset': offset,
@@ -164,7 +166,7 @@ def Setup(a):
 
 def VerifyAPIKey(func):
     '''
-    Use this decorator to require a request has the correct API_KEY
+    Use this decorator to verify a request has the correct API_KEY
     :param func:
     :return:
     '''
@@ -204,6 +206,13 @@ def SearchFor(searchFor, _limit=None, _offset=None):
 
 
 def RawSQLQuery(q, _limit=None, _offset=None):
+    '''
+    Run a raw SQL query
+    :param q: str
+    :param _limit: None or int
+    :param _offset: None or int
+    :return: generator of db results
+    '''
     if _limit:
         q += f' LIMIT {_limit}'
     if _offset:

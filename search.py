@@ -30,38 +30,3 @@ def Setup(app):
             initSearch=request.args.get('searchFor', None),
             isAdmin=IsAdmin(),
         )
-
-    @app.route('/search/today')
-    def SearchToday():
-        now = datetime.datetime.now()
-        kwargs = {
-            'day': now.day,
-            'month': now.month,
-        }
-        return redirect(f'/api/people/search?{urlencode(kwargs)}')
-
-    @app.route('/search/thisWeek')
-    def SearchThisWeek():
-        now = datetime.datetime.now()
-        startDT = now - datetime.timedelta(days=now.weekday())
-        endDT = startDT + datetime.timedelta(days=7)
-        print('now=', now)
-        print('startDT=', startDT)
-        print('endDT=', endDT)
-        kwargs = {
-            'start_month': startDT.month,
-            'start_day': startDT.day,
-            'end_month': endDT.month,
-            'end_day': endDT.day,
-        }
-        return redirect(f'/api/people/search?{urlencode(kwargs)}')
-
-    @app.route('/search/thisMonth')
-    def SearchThisMonth():
-        now = datetime.datetime.now()
-        kwargs = {
-            'month': now.month,
-        }
-        return redirect(f'/api/people/search?{urlencode(kwargs)}')
-
-

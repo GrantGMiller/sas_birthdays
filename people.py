@@ -1,7 +1,7 @@
 import datetime
 import random
 import string
-import sys
+import time
 import uuid
 from flask_login_dictabase_blueprint import VerifyAdmin
 from flask_login_dictabase_blueprint.menu import AddMenuOption, GetMenu
@@ -19,9 +19,12 @@ def Setup(a):
         url='/people/add',
         adminOnly=True,
     )
+
     global app
     app = a
 
+    # Create a background job to add a large number of people to the database
+    # every X minutes, add Y number of people to the database
     JOB_NAME = 'Add More People'
     with app.app_context():
         for job in app.jobs.GetJobs():
@@ -36,7 +39,12 @@ def Setup(a):
         # print('job=', job)
 
     @app.route('/people/add', methods=['GET', 'POST'])
+    @VerifyAdmin  # restrict this page to admins only
     def PeopleAdd():
+        '''
+        Add a new user to the database
+        :return:
+        '''
         if request.method == 'POST':
             person = CreateNewPerson(request.form)
             return redirect(f'/search?searchFor={person["date_of_birth"]} {person["first_name"]} {person["last_name"]}')
@@ -61,20 +69,19 @@ def Setup(a):
 
     @app.route('/people/face/<UUID>')
     def PeopleFace(UUID):
+        '''
+        Return the user's profile image.
+        :param UUID:
+        :return:
+        '''
         person = app.db.FindOne(Person, uuid=UUID)
         return send_file(person.thumbPath, as_attachment=True, )
-
-    @app.route('/people/test')
-    def PeopleTest():
-        ret = app.db.db.query(f"SELECT * FROM Person WHERE first_name = 'Bob' LIMIT 2;", _limit=2)
-        print('ret=', ret)
-        return jsonify(list(ret))
 
 
 class Person(BaseTable):
     def __init(self, *a, **k):
         super().__init__(*a, **k)
-        self.uuid
+        self.uuid  # ensure this person has a uuid
         self['birth_year'] = self['date_of_birth'].year
         self['birth_month'] = self['date_of_birth'].month
         self['birth_day'] = self['date_of_birth'].day
@@ -141,6 +148,10 @@ class Person(BaseTable):
 
     @property
     def imgPath(self):
+        '''
+        Return the local path to the user's image
+        :return: str
+        '''
         p = Path(self.app.config['basedir']) / 'faces' / f'{self["id"] % 100}_face.png'
         if not p.exists():
             return 'https://thispersondoesnotexist.com'
@@ -148,6 +159,10 @@ class Person(BaseTable):
 
     @property
     def thumbPath(self):
+        '''
+        Return the local path to the user's image (low res)
+        :return: str
+        '''
         p = Path(self.app.config['basedir']) / 'faces' / f'{self["id"] % 100}_face_200x200.png'
         if not p.exists():
             return 'https://thispersondoesnotexist.com'
@@ -155,10 +170,19 @@ class Person(BaseTable):
 
     @property
     def imgSrc(self):
+        '''
+        Return the relative URL to the user's profile image
+        :return: str
+        '''
         return f'/people/face/{self.uuid}'
 
 
 def GetRandomPerson(index=None):
+    '''
+    Create a random person from the CSV file and insert them into the database.
+    :param index:
+    :return: Person() obj
+    '''
     index = index or 0
     csvPath = Path(app.config['basedir']) / 'us-50000.csv'
     with open(csvPath, mode='r') as file:
@@ -189,6 +213,16 @@ def GetRandomPerson(index=None):
 
 
 def CreateNewPerson(data):
+    '''
+    Create a new person from 'data' and insert into the db.
+    If any data is missing, it will be given a random value.
+
+    The dict must contain {'first_name' and 'last_name'} and there must not be
+        a person with that same name in the db already.
+
+    :param data: dict
+    :return: Person() obj
+    '''
     with app.app_context():
         existingPerson = app.db.FindOne(
             Person,
@@ -242,6 +276,13 @@ def CreateNewPerson(data):
 
 
 def EditPerson(data):
+    '''
+    Edit a person in the db.
+    Must pass data['uuid']
+
+    :param data: dict
+    :return: Person() obj with updated data
+    '''
     person = app.db.FindOne(
         Person,
         uuid=data['uuid'],
@@ -276,16 +317,24 @@ def EditPerson(data):
 
 
 def GetRandomDatetime():
-    dob_month = random.randint(1, 12)
-    dobDT = datetime.datetime(
-        year=random.randint(1971, 2015),
-        month=dob_month,
-        day=random.randint(1, 30 if dob_month in [9, 4, 6, 11] else 31 if dob_month != 2 else 28),
+    '''
+    Return a random datetime between 1970 and (today -18years)
+    Used to give people a random birthday
+    :return:
+    '''
+    endDT = datetime.datetime.now() - datetime.timedelta(days=365*18)
+    dobDT = datetime.datetime.fromtimestamp(
+        random.randint(0, int(endDT.timestamp()))
     )
     return dobDT
 
 
 def AddMorePeople():
+    '''
+    If db has less than MIN_NUM_PEOPLE in it. Add some more.
+    Run this periodically unstil the db has met the MIN_NUM_PEOPLE.
+    :return: None
+    '''
     print('AddMorePeople')
     # create at least X ppl
     with app.app_context():

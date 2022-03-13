@@ -24,7 +24,7 @@ app.config['STATIC_FOLDER'] = f'static'
 app.config['STATIC_PATH'] = f'/static'
 # print("app.config['STATIC_PATH']=", app.config['STATIC_PATH'])
 
-# overriding jinja template loader so that pytest can acccess templates
+# overriding jinja template loader so that pytest can access templates
 my_loader = jinja2.ChoiceLoader([
     app.jinja_loader,
     jinja2.FileSystemLoader(app.config['basedir'] + '/templates'),
