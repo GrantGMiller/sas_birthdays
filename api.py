@@ -11,10 +11,25 @@ def Setup(a):
     global app
     app = a
 
+    # Only 'admins' can add users from the web UI
     AddAdmin('grant@grant-miller.com')
 
     @app.route('/api/people/search', methods=['GET', 'POST'])
     def APIPeopleSearch():
+        '''
+        search params will be in the 'request.form' dict
+        use 'month' and/or 'day' in request.form to search for a birthday
+        use 'thisWeek' as a key in reqeust.form to get birthdays for the current week
+
+        if none of the above are in 'request.form', then the values of request.form
+            will be used to perform a full-text-search on all users.
+            Example: if 'request.form' = {'search': 'john smith'} will return any
+             users with 'john' and 'smith' in their row
+
+        include {'export': 'true'} in request.form to return ALL results (not limited/paginated)
+
+        :return: json response
+        '''
         print('APIPeopleSearch()', request.method, 'request.form=', request.form)
         export = request.form.get('export', False)
         export = {'true': True}.get(export, False)
@@ -38,7 +53,7 @@ def Setup(a):
                     _limit=None if export else MAX_RESULTS_PER_PAGE,
                     _offset=None if export else offset,
                 )
-            else:
+            else:  # search the month only
                 ret = app.db.FindAll(
                     people.Person,
                     _where='birth_month', _equals=searchMonth,
@@ -46,7 +61,9 @@ def Setup(a):
                     _limit=None if export else MAX_RESULTS_PER_PAGE,
                     _offset=None if export else offset,
                 )
+
         elif 'day' in request.form:
+            # search the day only
             searchDay = int(request.form['day'])
             ret = app.db.FindAll(
                 people.Person,
@@ -59,14 +76,23 @@ def Setup(a):
         elif 'thisWeek' in request.form:
             now = datetime.datetime.now()
             startDT = now - datetime.timedelta(days=now.weekday())
-            endDT = startDT + datetime.timedelta(days=7)
+            endDT = startDT + datetime.timedelta(days=7, microseconds=-1)
             print('now=', now)
             print('startDT=', startDT)
             print('endDT=', endDT)
 
             if endDT.month > startDT.month:
-                # todo - deal with when 'endDT' is in the next month
-                pass
+                s = f'(birth_month == {startDT.month} and birth_day >= {startDT.day})'
+                s += ' or '
+                s += f'(birth_month == {endDT.month} and birth_day <= {endDT.day})'
+
+                q = f"SELECT * FROM Person WHERE {s}"
+                ret = RawSQLQuery(
+                    q,
+                    _limit=None if export else MAX_RESULTS_PER_PAGE,
+                    _offset=None if export else offset,
+                )
+
             else:
                 ret = app.db.FindAll(
                     people.Person,
@@ -174,14 +200,18 @@ def SearchFor(searchFor, _limit=None, _offset=None):
         s += ')'
 
         q = f"SELECT * FROM Person WHERE {s}"
-        if _limit:
-            q += f' LIMIT {_limit}'
-        if _offset:
-            q += f' OFFSET {_offset}'
+        return RawSQLQuery(q, _limit, _offset)
 
-        print('q=', q)
-        r = app.db.db.query(q)
-        for item in r:
-            # print('item=', item)
-            item['date_of_birth'] = datetime.datetime.fromisoformat(item['date_of_birth'])
-            yield people.Person(db=app.db, app=app, **item)
+
+def RawSQLQuery(q, _limit=None, _offset=None):
+    if _limit:
+        q += f' LIMIT {_limit}'
+    if _offset:
+        q += f' OFFSET {_offset}'
+
+    print('q=', q)
+    r = app.db.db.query(q)
+    for item in r:
+        # print('item=', item)
+        item['date_of_birth'] = datetime.datetime.fromisoformat(item['date_of_birth'])
+        yield people.Person(db=app.db, app=app, **item)

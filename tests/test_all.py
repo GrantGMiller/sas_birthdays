@@ -34,10 +34,13 @@ def test_api():
     # Create a test client using the Flask application configured for testing
     with app.test_client() as test_client:
         print('test_client=', test_client)
-        response = test_client.get('/api/people/search?searchFor=Alda Antony')
+        response = test_client.post(
+            '/api/people/search',
+            data={'first_name': 'Alda', 'last_name': 'Antony'}
+        )
         print('response=', response)
         assert response.status_code == 200
-        for item in response.json:
+        for item in response.json['results']:
             print('item=', item)
             if item['first_name'] == 'Alda' and item['last_name'] == 'Antony':
                 break
