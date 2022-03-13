@@ -81,13 +81,17 @@ def Setup(a):
                 )
 
         else:
+            searchString = ''
+            for key, value in request.form.items():
+                if key not in ['export', 'offset']:
+                    searchString += f'{value} '
+
             ret = SearchFor(
-                ' '.join(request.form.values()),
+                searchString,
                 _limit=None if export else MAX_RESULTS_PER_PAGE,
                 _offset=None if export else offset,
             )
 
-        endTime = time.time()
         pageNum = int(offset / MAX_RESULTS_PER_PAGE)
         ret = {
             'offset': offset,
@@ -95,8 +99,11 @@ def Setup(a):
             'pageNum': pageNum,
             'search_params': request.form,
             'results': list(r.UISafe() for r in ret),
-            'search_time_seconds': endTime - startTime,
         }
+        endTime = time.time()
+        deltaTime = endTime - startTime
+        print('deltaTime=', deltaTime)
+        ret['search_time_milliseconds'] = deltaTime * 1000
         print("len(ret['results'])=", len(ret['results']))
         return jsonify(ret)
 
@@ -135,6 +142,7 @@ def VerifyAPIKey(func):
     :param func:
     :return:
     '''
+
     @functools.wraps(func)
     def VerifyAPIKeyWrapper(*a, **k):
         print('req key   =', request.form.get('apiKey', None))
@@ -152,7 +160,7 @@ def SearchFor(searchFor, _limit=None, _offset=None):
     :param searchFor: str > space-separated search string(s)
     :return:
     '''
-    print('searchFor=', searchFor)
+    print('SearchFor=', searchFor)
     if searchFor:
         # q = f"SELECT * FROM Person WHERE first_name LIKE '%{searchFor}%'";
         sub = ''
@@ -177,4 +185,3 @@ def SearchFor(searchFor, _limit=None, _offset=None):
             # print('item=', item)
             item['date_of_birth'] = datetime.datetime.fromisoformat(item['date_of_birth'])
             yield people.Person(db=app.db, app=app, **item)
-
