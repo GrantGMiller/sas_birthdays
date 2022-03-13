@@ -1,10 +1,7 @@
 import datetime
 import functools
-import random
-import string
 import time
-from urllib.parse import urlencode
-from flask import request, redirect, jsonify
+from flask import request, jsonify
 from flask_login_dictabase_blueprint import AddAdmin
 import config
 import people
@@ -27,6 +24,7 @@ def Setup(a):
         MAX_RESULTS_PER_PAGE = 15
         offset = int(request.form.get('offset', 0))
         print('offset=', offset)
+
         ret = []
         if 'month' in request.form:
             searchMonth = int(request.form['month'])
@@ -82,9 +80,9 @@ def Setup(a):
                     _offset=None if export else offset,
                 )
 
-        elif 'searchFor' in request.form:
+        else:
             ret = SearchFor(
-                request.form['searchFor'],
+                ' '.join(request.form.values()),
                 _limit=None if export else MAX_RESULTS_PER_PAGE,
                 _offset=None if export else offset,
             )
@@ -107,14 +105,14 @@ def Setup(a):
     def APIPeopleAdd():
         print('APIPeopleAdd request.form=', request.form)
         new = people.CreateNewPerson(request.form)
-        return jsonify(new)
+        return jsonify(new.UISafe())
 
     @app.post('/api/people/edit')
     @VerifyAPIKey
     def APIPeopleEdit():
         print('APIPeopleAdd request.form=', request.form)
         person = people.EditPerson(request.form)
-        return jsonify(person)
+        return jsonify(person.UISafe())
 
     @app.post('/api/people/delete')
     @VerifyAPIKey
@@ -126,12 +124,17 @@ def Setup(a):
         )
         if person:
             app.db.Delete(person)
-            return jsonify('Deleted')
+            return jsonify(f'Deleted uuid="{person.uuid}')
         else:
             return jsonify('Person not found'), 404
 
 
 def VerifyAPIKey(func):
+    '''
+    Use this decorator to require a request has the correct API_KEY
+    :param func:
+    :return:
+    '''
     @functools.wraps(func)
     def VerifyAPIKeyWrapper(*a, **k):
         print('req key   =', request.form.get('apiKey', None))
@@ -145,9 +148,8 @@ def VerifyAPIKey(func):
 
 def SearchFor(searchFor, _limit=None, _offset=None):
     '''
-
+    Performs a full-text-search on all the users.
     :param searchFor: str > space-separated search string(s)
-    :param mode: str > should be 'and' or 'or' to indicate if the individual sub string must all match (and) or only one (or)
     :return:
     '''
     print('searchFor=', searchFor)
@@ -156,11 +158,12 @@ def SearchFor(searchFor, _limit=None, _offset=None):
         sub = ''
         cols = app.db.db['Person'].columns
 
-        s = ''
+        s = '('
         for index, subString in enumerate(searchFor.split(' ')):
             if index > 0:
-                s += ' or '
+                s += ') and ('
             s += ' or '.join(f"{col} LIKE '%{subString}%'" for col in cols)
+        s += ')'
 
         q = f"SELECT * FROM Person WHERE {s}"
         if _limit:

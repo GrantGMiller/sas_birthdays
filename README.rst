@@ -8,7 +8,7 @@ A live demo of this app is available at: https://sas.grant-miller.com/
 
 API
 ===
-An api is also supported to integrate with other tools.
+An API is also supported to integrate with other tools.
 
 All API commands should encode and send data as HTTP Form Data.
 Some API commands require the user to pass an 'apiKey' in the form data.
@@ -20,12 +20,15 @@ The below examples are using the python-requests package (https://pypi.org/proje
 
 ::
 
+    BASE_URL = 'https://sas.grant-miller.com/'
+    API_KEY = 'secret123'
+
     # Perform a search
     resp = requests.post(
-        url='https://sas.grant-miller.com/api/people/search',
+        url=BASE_URL + 'api/people/search',
         data={'first_name': 'John', 'last_name': 'Smith'},
     )
-    for item in resp.json():
+    for item in resp.json()['results']:
         print('item=', item)
 
     >>> item= {
@@ -51,9 +54,9 @@ The below examples are using the python-requests package (https://pypi.org/proje
 
     # Add a new user
     requests.post(
-        url='https://sas.grant-miller.com/api/people/add',
+        url=BASE_URL + 'api/people/add',
         data={
-            'apiKey': 'secretApiKey',
+            'apiKey': API_KEY,
             'first_name': 'John',
             'last_name': 'Smith',
             },
@@ -65,9 +68,9 @@ The below examples are using the python-requests package (https://pypi.org/proje
 
     # Edit a user
     requests.post(
-        url='https://sas.grant-miller.com/api/people/edit',
+        url=BASE_URL + 'api/people/edit',
         data={
-            'apiKey': 'secretApiKey',
+            'apiKey': API_KEY,
             'uuid': '123-456',
             'address': '123 Fake St.'
             },
@@ -80,13 +83,13 @@ The below examples are using the python-requests package (https://pypi.org/proje
 
     # Delete a user
     requests.post(
-        url='https://sas.grant-miller.com/api/people/delete',
+        url=BASE_URL + 'api/people/delete',
         data={
-            'apiKey': 'secretApiKey',
+            'apiKey': API_KEY,
             'uuid': '123-456',
             },
     )
-    # data must include the 'uuid' of the user to edit.
+    # data must include the 'uuid' of the user to delete.
 
 
 

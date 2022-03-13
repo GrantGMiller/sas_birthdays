@@ -71,7 +71,6 @@
         })
     }
 
-
     function Today() {
         // a preset to search for birthdays happening today
         console.log('Today()');
@@ -154,7 +153,6 @@
             results.append("<button onclick='ExportResults(" + JSON.stringify(resp['search_params']) + ")' class='btn btn-sm btn-success'>Export Results</button>");
 
             items.forEach(function (item) {
-                //console.log('item=', item);
                 AppendCard(item);
             })
 
@@ -164,7 +162,7 @@
             console.log('cmd=', cmd);
             $('#img_card_' + lastItem['uuid']).attr('onload', cmd);
 
-            // add a 'load more' button
+            // add a 'load more' button at the end of the cards
             results.append(`<button id='btn_load_more' class='btn btn-secondary'
             onclick = 'LoadMore(` + JSON.stringify(resp['search_params']) + ', ' + Number(resp['offset'] + items.length)
                 + ");'>more</button>");
@@ -179,13 +177,10 @@
         // add a single result card to the page
         d = new Date((item['date_of_birth_timestamp'] * 1000) + 1);
         now = new Date();
-        //console.log('d=', d);
-        //console.log('now=', now);
 
+        // if today is the person's bday, add an emoji
         bdayIsToday = ((now.getMonth() == d.getUTCMonth() && now.getDate() == d.getUTCDate()) ? '🎂' : '');
-        //console.log('bdayIsToday=', bdayIsToday);
 
-        //console.log('d=', d);
         results.append(`
         <div class="card m-2">
             <h5 class="card-header">FIRST_NAME LAST_NAME</h5>
@@ -205,6 +200,7 @@
         ).replace('EMAIL_ADDRESS', item['email']
         ).replace('MAIL_ADDRESS', item['address']
         ).replace('UUID', item['uuid']
+        ).replace('UUID', item['uuid']
         ).replace('EMOJI', bdayIsToday
         ).replace('IMG_SRC', item['imgSrc']
         )
@@ -222,7 +218,9 @@
             data: searchParams,
             success: function (resp) {
                 console.log('LoadMore resp=', resp);
+
                 $('#btn_load_more').remove();
+
                 items = resp['results']
                 if (items.length > 0) {
 
@@ -236,7 +234,7 @@
                     $('#img_card_' + lastItem['uuid']).attr('onload', cmd);
 
                     $('#results').append(`<button id='btn_load_more' class='btn btn-secondary'
-                onclick = 'LoadMore(` + JSON.stringify(resp['search_params']) + ', ' + Number(resp['offset'] + items.length)
+                        onclick = 'LoadMore(` + JSON.stringify(resp['search_params']) + ', ' + Number(resp['offset'] + items.length)
                         + ");'>more</button>");
                 } else {
                     console.log('no more restuls');
@@ -249,6 +247,7 @@
     }
 
     function ExportResults(search) {
+        // save all the search results to a JSON file on the client's device
         search['export'] = true;
 
         $.ajax({

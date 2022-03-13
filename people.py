@@ -22,8 +22,6 @@ def Setup(a):
     global app
     app = a
 
-    AddMorePeople()
-
     JOB_NAME = 'Add More People'
     with app.app_context():
         for job in app.jobs.GetJobs():
@@ -121,18 +119,17 @@ class Person(BaseTable):
                 'birth_month',
                 'birth_day',
                 'birth_year',
-                'uuid',
             ]:
                 value = self.get(key, None)
                 if isinstance(value, (datetime.datetime,)):
                     value = value.isoformat()
-
-                ret[key] = self.get(key, None)
+                ret[key] = value
 
             elif key == 'date_of_birth':
                 ret['date_of_birth_iso'] = self[key].isoformat()
 
         ret['imgSrc'] = self.imgSrc
+        ret['uuid'] = self.uuid
 
         return ret
 
