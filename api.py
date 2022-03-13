@@ -188,7 +188,8 @@ def SearchFor(searchFor, _limit=None, _offset=None):
     :param searchFor: str > space-separated search string(s)
     :return:
     '''
-    print('SearchFor=', searchFor)
+    searchFor = searchFor.strip()
+    print('SearchFor=', searchFor, ', len(searchFor)=', len(searchFor))
     if searchFor:
         # q = f"SELECT * FROM Person WHERE first_name LIKE '%{searchFor}%'";
         sub = ''
@@ -203,7 +204,8 @@ def SearchFor(searchFor, _limit=None, _offset=None):
 
         q = f"SELECT * FROM Person WHERE {s}"
         return RawSQLQuery(q, _limit, _offset)
-
+    else:
+        return ''
 
 def RawSQLQuery(q, _limit=None, _offset=None):
     '''
