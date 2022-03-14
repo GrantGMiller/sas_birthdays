@@ -148,24 +148,23 @@
         results.empty();
 
         if (items.length > 0) {
-            uuids = ''
-            items.forEach(function (item) { uuids += item['uuid'] + ' ' });
             results.append("<button onclick='ExportResults(" + JSON.stringify(resp['search_params']) + ")' class='btn btn-sm btn-success'>Export Results</button>");
 
             items.forEach(function (item) {
                 AppendCard(item);
             })
 
+            // add inifinite scroll
+            // when last image loads, load the next page of results
             lastItem = items[items.length - 1];
-            cmd = 'LoadMore(' + JSON.stringify(resp['search_params']) + ', ' + Number(resp['offset'] + items.length)
-                + ")";
-            console.log('cmd=', cmd);
+
+            cmd = GetLoadMoreCmd(resp);
+
             $('#img_card_' + lastItem['uuid']).attr('onload', cmd);
 
             // add a 'load more' button at the end of the cards
             results.append(`<button id='btn_load_more' class='btn btn-secondary'
-            onclick = 'LoadMore(` + JSON.stringify(resp['search_params']) + ', ' + Number(resp['offset'] + items.length)
-                + ");'>more</button>");
+            onclick = '` + cmd + `'>more</button>`);
 
 
         } else {
@@ -207,6 +206,13 @@
         );
     }
 
+    function GetLoadMoreCmd(resp) {
+        cmd = 'LoadMore(' + JSON.stringify(resp['search_params']) + ', ' + Number(resp['offset'] + items.length)
+            + ")";
+        console.log('GetLoadMoreCmd cmd=', cmd);
+        return cmd
+    }
+
     function LoadMore(searchParams, newOffset) {
         // when the user reaches the last result in the UI, a call is made to the server for more results
         // if server returns more restuls, draw them
@@ -228,14 +234,15 @@
 
                     lastItem = items[items.length - 1];
                     console.log('lastItem=', lastItem);
-                    cmd = 'LoadMore(' + JSON.stringify(resp['search_params']) + ', ' + Number(resp['offset'] + items.length)
-                        + ")";
-                    console.log('cmd=', cmd);
+
+                    cmd = GetLoadMoreCmd(resp);
+
+
                     $('#img_card_' + lastItem['uuid']).attr('onload', cmd);
 
-                    $('#results').append(`<button id='btn_load_more' class='btn btn-secondary'
-                        onclick = 'LoadMore(` + JSON.stringify(resp['search_params']) + ', ' + Number(resp['offset'] + items.length)
-                        + ");'>more</button>");
+                    // add a 'load more' button at the end of the cards
+                    results.append(`<button id='btn_load_more' class='btn btn-secondary'
+                        onclick = '` + cmd + `'>more</button>`);
                 } else {
                     console.log('no more restuls');
                 }

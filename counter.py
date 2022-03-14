@@ -11,6 +11,12 @@ from slack import Slack
 
 ENABLE_COUNTING = True
 
+'''
+This /counter page is used by the admin to see how many unique views each page has gotten.
+The admin is notified in exponential increments of new milestones.
+For example: the admin will be notified of 2,4,8,16.... views of a certain page.
+'''
+
 
 def Setup(a):
     global app
