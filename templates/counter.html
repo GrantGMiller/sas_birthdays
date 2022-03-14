@@ -1,0 +1,45 @@
+{% extends "base.html" %}
+
+{% block body %}
+
+<div class='container'>
+    Page Views <br>
+
+
+    <div class='container m-2'>
+        <a href='/counter?date={{prevDate.isoformat()}}' class='btn btn-sm btn-info'>Previous Day</a>
+
+        {{ currentDT | FormatDate }}
+
+        {% if nextDate %}
+        <a href='/counter?date={{nextDate.isoformat()}}' class='btn btn-sm btn-info'>Next Day</a>
+        {% else %}
+        <button disabled class='btn btn-sm btn-info'>Next Day</a>
+            {% endif %}
+    </div>
+</div>
+
+
+<div class='container'>
+    <table class="table">
+        <thead>
+            <tr>
+                <th scope="col">PAGE</th>
+                <th scope="col">Total Views</th>
+                <th scope="col">Unique Views</th>
+                <!-- <th scope="col">Raw</th> -->
+            </tr>
+        </thead>
+        <tbody>
+            {% for endpoint in endpoints %}
+            <tr>
+                <td>{{ endpoint.name }}</td>
+                <td>{{ endpoint.Count }}</td>
+                <td>{{ endpoint.NumUniqueIPs }}</td>
+                <!-- <td>{{ endpoint.Get('ips') }}</td> -->
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% endblock %}

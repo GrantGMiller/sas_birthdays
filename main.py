@@ -6,6 +6,7 @@ import jinja2
 from flask import Flask, redirect, render_template, jsonify
 import flask_login_dictabase_blueprint
 import config
+import counter
 import search
 import people
 import api
@@ -42,6 +43,7 @@ app.register_blueprint(flask_login_dictabase_blueprint.bp)
 
 
 @app.route('/')
+@counter.CountViews
 def Index():
     return redirect('/search')
 
@@ -67,6 +69,7 @@ def Error(e):
 
 
 @app.route('/error_test')
+@counter.CountViews
 def ErrorTest():
     raise Exception('This is a fake error.')
 
@@ -74,6 +77,7 @@ def ErrorTest():
 search.Setup(app)
 people.Setup(app)
 api.Setup(app)
+counter.Setup(app)
 
 if __name__ == '__main__':
     app.run(debug=True)

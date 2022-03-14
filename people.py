@@ -10,6 +10,7 @@ from flask_dictabase import BaseTable
 from pathlib import Path
 import csv
 
+from counter import CountViews
 from slack import Slack
 
 
@@ -39,6 +40,7 @@ def Setup(a):
         # print('job=', job)
 
     @app.route('/people/add', methods=['GET', 'POST'])
+    @CountViews
     @VerifyAdmin  # restrict this page to admins only
     def PeopleAdd():
         '''
@@ -56,6 +58,7 @@ def Setup(a):
         )
 
     @app.route('/people/delete/<uuid>')
+    @CountViews
     @VerifyAdmin
     def PeopleDelete(uuid):
         person = app.db.FindOne(Person, uuid=uuid)
@@ -68,6 +71,7 @@ def Setup(a):
             return redirect('/')
 
     @app.route('/people/face/<UUID>')
+    @CountViews
     def PeopleFace(UUID):
         '''
         Return the user's profile image.

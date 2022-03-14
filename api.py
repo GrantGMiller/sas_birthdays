@@ -5,6 +5,7 @@ from flask import request, jsonify
 from flask_login_dictabase_blueprint import AddAdmin
 import config
 import people
+from counter import CountViews
 
 
 def Setup(a):
@@ -15,6 +16,7 @@ def Setup(a):
     AddAdmin('grant@grant-miller.com')
 
     @app.route('/api/people/search', methods=['GET', 'POST'])
+    @CountViews
     def APIPeopleSearch():
         '''
         search params will be in the 'request.form' dict
@@ -136,6 +138,7 @@ def Setup(a):
         return jsonify(ret)
 
     @app.post('/api/people/add')
+    @CountViews
     @VerifyAPIKey
     def APIPeopleAdd():
         print('APIPeopleAdd request.form=', request.form)
@@ -143,6 +146,7 @@ def Setup(a):
         return jsonify(new.UISafe())
 
     @app.post('/api/people/edit')
+    @CountViews
     @VerifyAPIKey
     def APIPeopleEdit():
         print('APIPeopleAdd request.form=', request.form)
@@ -150,6 +154,7 @@ def Setup(a):
         return jsonify(person.UISafe())
 
     @app.post('/api/people/delete')
+    @CountViews
     @VerifyAPIKey
     def APIPeopleDelete():
         print('APIPeopleAdd request.form=', request.form)
@@ -206,6 +211,7 @@ def SearchFor(searchFor, _limit=None, _offset=None):
         return RawSQLQuery(q, _limit, _offset)
     else:
         return ''
+
 
 def RawSQLQuery(q, _limit=None, _offset=None):
     '''

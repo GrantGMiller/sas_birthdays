@@ -11,6 +11,7 @@ from flask_login_dictabase_blueprint import IsAdmin
 from flask_login_dictabase_blueprint.menu import AddMenuOption, GetMenu
 
 from api import SearchFor
+from counter import CountViews
 
 
 def Setup(app):
@@ -20,6 +21,7 @@ def Setup(app):
     )
 
     @app.route('/search', methods=['GET', 'POST'])
+    @CountViews
     def Search():
         if request.method == 'POST':
             return redirect('/api/people/search?searchFor={}'.format(request.form.get('searchFor')))

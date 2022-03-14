@@ -29,9 +29,9 @@ def test_search_page():
 
 
 def test_api():
+    # Test the search API
     app = main.app
     print('\napp=', app)
-    # Create a test client using the Flask application configured for testing
     with app.test_client() as test_client:
         print('test_client=', test_client)
         response = test_client.post(
