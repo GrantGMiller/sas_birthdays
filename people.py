@@ -71,7 +71,6 @@ def Setup(a):
             return redirect('/')
 
     @app.route('/people/face/<UUID>')
-    @CountViews
     def PeopleFace(UUID):
         '''
         Return the user's profile image.
