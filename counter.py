@@ -3,7 +3,7 @@ import functools
 import math
 import flask_tools
 import flask_dictabase
-from flask import render_template, request
+from flask import render_template, request, jsonify
 from flask_login_dictabase_blueprint import GetUser, IsAdmin, VerifyAdmin
 from flask_login_dictabase_blueprint.menu import AddMenuOption, GetMenu
 
@@ -24,7 +24,7 @@ def Setup(a):
 
     @app.route('/counter')
     @VerifyAdmin
-    def Count():
+    def Counter():
         reqDate = request.args.get('date', None)
         if reqDate:
             currentDate = datetime.date.fromisoformat(reqDate)
@@ -40,6 +40,18 @@ def Setup(a):
             endpoints=endpoints,
             menu=GetMenu('Counter'),
         )
+
+    @app.route('/counter/raw')
+    @VerifyAdmin
+    def CounterRaw():
+        reqDate = request.args.get('date', None)
+        if reqDate:
+            currentDate = datetime.date.fromisoformat(reqDate)
+        else:
+            currentDate = datetime.date.today()
+
+        endpoints = app.db.FindAll(EndpointCounter, date=currentDate)
+        return jsonify(list(endpoints))
 
     @app.template_filter()
     def FormatDatetime(dt):
