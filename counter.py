@@ -53,6 +53,10 @@ def Setup(a):
         endpoints = app.db.FindAll(EndpointCounter, date=currentDate)
         return jsonify(list(endpoints))
 
+    @app.route('/counter/ip')
+    def CounterIP():
+        return GetClientIP()
+
     @app.template_filter()
     def FormatDatetime(dt):
         return dt.strftime('%Y-%m-%d %H:%M %p')
@@ -98,7 +102,8 @@ def SendPopularityNotification(endpointCounter, count):
     if a >= 4:
         # credit to stackoverflow: https://stackoverflow.com/questions/39281632/check-if-a-number-is-a-perfect-power-of-another-number
         if b ** int(round(math.log(a, b))) == a:
-            Slack(f'The "{endpointCounter["name"]}" page has gotten {count} views today.')
+            Slack(
+                f'The "{endpointCounter["name"]}" page has gotten {count} views by {endpointCounter.NumUniqueIPs} unique IPs today.')
 
 
 def GetClientIP():
