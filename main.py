@@ -12,6 +12,7 @@ import people
 import api
 from slack import Slack
 import flask_jobs
+from werkzeug.middleware import proxy_fix;
 
 app = Flask('SAS Birthdays')
 app.config['SECRET_KEY'] = config.SECRET_KEY
@@ -31,6 +32,7 @@ my_loader = jinja2.ChoiceLoader([
     jinja2.FileSystemLoader(app.config['basedir'] + '/templates'),
 ])
 app.jinja_loader = my_loader
+app.wsgi_app = proxy_fix.ProxyFix(app.wsgi_app)
 
 app.db = flask_dictabase.Dictabase(app)
 jobs = flask_jobs.JobScheduler(
