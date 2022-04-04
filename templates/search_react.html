@@ -307,6 +307,7 @@
                         />
                     </React.Fragment>
                 ))}
+
             </div>
         )
     }
@@ -362,7 +363,7 @@
                         style={style}
                         loading="lazy"
                         className='img-thumbnail rounded'
-                        onLoad={(el) => isLast ? LoadMore() : console.log('img loaded')}
+                    // onLoad={(el) => isLast ? LoadMore() : console.log('img loaded')}
                     />
                     <p className="card-text">Birthday: {item.birth_month}-{item.birth_day}-{item.birth_year} {bdayIsToday}</p>
                     <p className="card-text">Address: {item.address}</p>
@@ -370,6 +371,8 @@
                     <p className="card-text">Email: {item.email}</p>
 
                 </div>
+                {isLast ? <button className="m2" onClick={(el) => LoadMore()}> Load more </button> : ''}
+
             </div>
         )
     }
