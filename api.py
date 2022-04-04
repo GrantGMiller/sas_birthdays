@@ -32,20 +32,24 @@ def Setup(a):
 
         :return: json response
         '''
-        print('APIPeopleSearch()', request.method, 'request.form=', request.form)
+        print('APIPeopleSearch()', request.method, 'request.form=', request.form, ', request.json=', request.json)
         export = request.form.get('export', False)
         export = {'true': True}.get(export, False)
         print('export=', export)
 
         startTime = time.time()
         MAX_RESULTS_PER_PAGE = 15
-        offset = int(request.form.get('offset', 0))
+
+        requestData = request.form or request.json
+
+        offset = int(requestData.get('offset', 0))
         print('offset=', offset)
 
-        if 'month' in request.form:
-            searchMonth = int(request.form['month'])
-            if 'day' in request.form:
-                searchDay = int(request.form['day'])
+        if requestData.get('month', None):
+            searchMonth = int(requestData['month'])
+            if requestData.get('day', None):
+                searchDay = int(requestData['day'])
+
                 ret = app.db.FindAll(
                     people.Person,
                     _where='birth_month', _equals=searchMonth,
@@ -54,18 +58,19 @@ def Setup(a):
                     _limit=None if export else MAX_RESULTS_PER_PAGE,
                     _offset=None if export else offset,
                 )
+
             else:  # search the month only
                 ret = app.db.FindAll(
                     people.Person,
                     _where='birth_month', _equals=searchMonth,
-
+                    _orderBy='birth_day',
                     _limit=None if export else MAX_RESULTS_PER_PAGE,
                     _offset=None if export else offset,
                 )
 
-        elif 'day' in request.form:
+        elif requestData.get('day', None):
             # search the day only
-            searchDay = int(request.form['day'])
+            searchDay = int(requestData['day'])
             ret = app.db.FindAll(
                 people.Person,
                 _where='birth_day', _equals=searchDay,
@@ -74,7 +79,7 @@ def Setup(a):
                 _offset=None if export else offset,
             )
 
-        elif 'thisWeek' in request.form:
+        elif 'thisWeek' in requestData:
             now = datetime.datetime.now()
             startDT = now - datetime.timedelta(days=now.weekday())
             endDT = startDT + datetime.timedelta(days=7, microseconds=-1)
@@ -111,10 +116,11 @@ def Setup(a):
 
         else:
             searchString = ''
-            for key, value in request.form.items():
-                if key not in ['export', 'offset']:
+            for key, value in requestData.items():
+                if key not in ['export', 'offset'] and value:
                     searchString += f'{value} '
 
+            print('122 searchString=', searchString)
             ret = SearchFor(
                 searchString,
                 _limit=None if export else MAX_RESULTS_PER_PAGE,
@@ -127,7 +133,7 @@ def Setup(a):
             'offset': offset,
             'max_results_per_page': MAX_RESULTS_PER_PAGE,
             'pageNum': pageNum,
-            'search_params': request.form,
+            'search_params': requestData,
             'results': list(r.UISafe() for r in ret),
         }
         endTime = time.time()

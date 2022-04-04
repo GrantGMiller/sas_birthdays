@@ -1,0 +1,387 @@
+{% extends "base.html" %}
+
+{% block head %}
+<script src="https://unpkg.com/react@17/umd/react.development.js"></script>
+<script src="https://unpkg.com/react-dom@17/umd/react-dom.development.js"></script>
+
+<!-- Don't use this in production: -->
+<script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+
+
+{% endblock %}
+
+{% block body %}
+<div id="root"></div>
+<script type="text/babel">
+    function App() {
+
+        return (
+            <>
+                <div className="container mt-3">
+                    <ResultsWithSearchFilterAndPresets />
+                </div>
+            </>
+        )
+    }
+
+    function ResultsWithSearchFilterAndPresets() {
+
+        const [search, searchDispatch] = React.useReducer(searchReducer, { searchString: '' });
+        const [result, resultDispatch] = React.useReducer(resultReducer, { items: [], offset: 0 });
+
+
+        function searchReducer(search, action) {
+            // this is the "what" that we are searching for
+            console.log('searchReducer(search=', search, ', action=', action);
+
+            let body = search;
+
+            if (action.type == 'update') {
+                if (action.month || action.day || action.thisWeek) {
+                    body.month = action.month;
+                    body.day = action.day;
+                    body.thisWeek = action.thisWeek;
+                    body.searchString = '';
+
+                } else if (action.searchString) {
+                    body.month = null;
+                    body.day = null;
+                    body.thisWeek = null;
+                    body.searchString = action.searchString;
+
+                }
+
+                fetch(
+                    '/api/people/search', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: body.searchString ? JSON.stringify({ 'search': body.searchString }) : JSON.stringify(body),
+
+                }).then(resp => resp.json()
+                ).then(resp => {
+                    console.log('resp=', resp);
+
+                    resultDispatch({
+                        type: 'clear and show',
+                        resp: resp,
+                    })
+
+                }).catch(err => {
+                    console.log('err=', err);
+                })
+            }
+
+            return body;
+        }
+
+
+
+
+        function resultReducer(result, action) {
+            // call this when there are new restuls to add to the page
+            console.log('resultReducer(result=', result, ', action=', action);
+
+            let ret = result;
+
+            if (action.type == 'clear and show') {
+                ret.items = action.resp.results;
+                ret.max_results_per_page = action.resp.max_results_per_page;
+                ret.offset = action.resp.offset;
+
+            } else if (action.type == 'extend') {
+                ret.items = [...ret.items, ...action.resp.results]
+                ret.max_results_per_page = action.resp.max_results_per_page;
+                ret.offset = action.resp.offset;
+            }
+
+            return { ...ret }
+        }
+
+        return (
+            <>
+                <div className="mb-3">
+                    <SearchFilter
+                        search={search}
+                        searchDispatch={searchDispatch}
+
+                        result={result}
+                        resultDispatch={resultDispatch}
+
+                    />
+
+
+                </div>
+
+                <div>
+                    Quick Links for Birthdays:
+                    <div className="row">
+                        <Preset
+                            name='Today'
+
+                            search={search}
+                            searchDispatch={searchDispatch}
+
+                            result={result}
+                            resultDispatch={resultDispatch}
+                        />
+                        <Preset
+                            name='This Week'
+
+                            search={search}
+                            searchDispatch={searchDispatch}
+
+                            result={result}
+                            resultDispatch={resultDispatch}
+                        />
+                        <Preset
+                            name='This Month'
+
+                            search={search}
+                            searchDispatch={searchDispatch}
+
+                            result={result}
+                            resultDispatch={resultDispatch}
+                        />
+                    </div>
+                </div>
+                <hr />
+                <Results
+                    search={search}
+                    searchDispatch={searchDispatch}
+
+                    result={result}
+                    resultDispatch={resultDispatch}
+                />
+            </>
+        )
+    }
+
+    function SearchFilter({ search, searchDispatch, result, resultDispatch }) {
+        const refTimeout = React.useRef(null);
+
+        function doSearchNow(string) {
+
+            console.log('doSearchNow() string=', string);
+
+            searchDispatch({
+                type: 'update',
+                searchString: string
+            })
+
+
+        }
+
+        return (
+            <>
+                <label className="form-label">(React) Search For a Person</label>
+                <div className="row">
+                    <div className="col">
+                        <input
+                            name="searchFor"
+                            type="text"
+                            className="form-control"
+                            id="searchFor"
+                            placeholder="Enter a name/company/email"
+
+                            onChange={(el) => {
+
+                                console.log('onChange(el=', el);
+                                console.log('el.target.value=', el.target.value);
+
+                                clearTimeout(refTimeout.current);
+
+                                refTimeout.current = setTimeout(
+                                    doSearchNow,
+                                    500,
+                                    el.target.value,
+                                );
+                            }}
+                        />
+                    </div>
+                </div>
+            </>
+        )
+    }
+
+
+
+    function Preset({ name, search, searchDispatch, result, resultDispatch }) {
+
+        function doSearchNow(month, day, thisWeek) {
+
+            console.log('doSearchNow() preset month=', month, ', day=', day);
+            fetch(
+                '/api/people/search', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify(thisWeek ? { thisWeek: true } : { month: month, day: day }),
+            }).then(resp => resp.json()
+            ).then(resp => {
+                console.log('resp=', resp);
+
+                resultDispatch({
+                    'type': 'response',
+                    'resp': resp,
+                })
+
+            }).catch(err => {
+                console.log('err=', err);
+            })
+
+        }
+
+
+        return (
+            <>
+                <button
+                    className="col m-2 btn btn-sm btn-secondary"
+                    onClick={(el) => {
+
+
+                        console.log(name);
+                        let d = new Date();
+                        let month = String(d.getMonth() + 1);
+                        let day = String(d.getDate());
+
+                        switch (name) {
+
+                            case 'Today':
+                                console.log('today switch case');
+                                searchDispatch({
+                                    type: 'update',
+                                    month: month,
+                                    day: day,
+                                    thisWeek: false,
+                                })
+                                break;
+                            case 'This Week':
+                                console.log('Week switch case');
+                                searchDispatch({
+                                    type: 'update',
+                                    month: null,
+                                    day: null,
+                                    thisWeek: true,
+                                })
+                                break;
+                            case 'This Month':
+                                console.log('Month switch case');
+                                searchDispatch({
+                                    type: 'update',
+                                    month: month,
+                                    day: null,
+                                    thisWeek: false,
+                                })
+                                break;
+
+                            default:
+                                console.log('default switch case');
+                        }
+
+                    }}>
+                    {name}
+                </button>
+            </>
+        )
+    }
+
+    function Results({ search, searchDispatch, result, resultDispatch }) {
+        console.log('Results(result=', result);
+        return (
+            <div>
+                {result.items.map(item => (
+                    <React.Fragment key={item.uuid}>
+                        <Result
+                            item={item}
+                            isLast={item === result.items[result.items.length - 1]}
+
+                            search={search}
+                            searchDispatch={searchDispatch}
+
+                            result={result}
+                            resultDispatch={resultDispatch}
+
+                        />
+                    </React.Fragment>
+                ))}
+            </div>
+        )
+    }
+
+    function Result({ item, isLast, search, searchDispatch, result, resultDispatch }) {
+        console.log('Result(result=', result, ', isLast=', isLast);
+        let style = { 'maxHeight': '150px' }
+
+        let d = new Date((item.date_of_birth_timestamp * 1000) + 1);
+        let now = new Date();
+        let bdayIsToday = ((now.getMonth() == d.getUTCMonth() && now.getDate() == d.getUTCDate()) ? '🎂' : '');
+
+
+        function LoadMore() {
+            console.log('LoadMore()');
+
+            let body = search;
+            body.offset = result.offset + result.max_results_per_page;
+
+            fetch(
+                '/api/people/search', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: body.searchString ? JSON.stringify({
+                    search: body.searchString,
+                    offset: body.offset
+                }) : JSON.stringify(body),
+
+            }).then(resp => resp.json()
+            ).then(resp => {
+                console.log('resp=', resp);
+
+                resultDispatch({
+                    type: 'extend',
+                    resp: resp
+                })
+
+            }).catch(err => {
+                console.log('err=', err);
+            })
+
+        }
+
+        return (
+            <div className="card m-2" key={item.uuid}>
+                <h5 className="card-header">{item.first_name} {item.last_name}</h5>
+                <div className="card-body">
+                    <img
+                        id='img_card_UUID'
+                        src={item.imgSrc}
+                        style={style}
+                        loading="lazy"
+                        className='img-thumbnail rounded'
+                        onLoad={(el) => isLast ? LoadMore() : console.log('img loaded')}
+                    />
+                    <p className="card-text">Birthday: {item.birth_month}-{item.birth_day}-{item.birth_year} {bdayIsToday}</p>
+                    <p className="card-text">Address: {item.address}</p>
+                    <p className="card-text">Phone: {item.phone}</p>
+                    <p className="card-text">Email: {item.email}</p>
+
+                </div>
+            </div>
+        )
+    }
+
+    // render the app
+
+    const domContainer = document.getElementById('root');
+    ReactDOM.render(React.createElement(App), domContainer);
+
+</script>
+
+
+
+
+{% endblock %}

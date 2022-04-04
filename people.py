@@ -325,7 +325,7 @@ def GetRandomDatetime():
     Used to give people a random birthday
     :return:
     '''
-    endDT = datetime.datetime.now() - datetime.timedelta(days=365*18)
+    endDT = datetime.datetime.now() - datetime.timedelta(days=365 * 18)
     dobDT = datetime.datetime.fromtimestamp(
         random.randint(0, int(endDT.timestamp()))
     )

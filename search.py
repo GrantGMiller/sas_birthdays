@@ -32,3 +32,16 @@ def Setup(app):
             initSearch=request.args.get('searchFor', None),
             isAdmin=IsAdmin(),
         )
+
+    @app.route('/search_react', methods=['GET', 'POST'])
+    @CountViews
+    def SearchReact():
+        if request.method == 'POST':
+            return redirect('/api/people/search?searchFor={}'.format(request.form.get('searchFor')))
+
+        return render_template(
+            'search_react.html',
+            menu=GetMenu('Search'),
+            initSearch=request.args.get('searchFor', None),
+            isAdmin=IsAdmin(),
+        )
