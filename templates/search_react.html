@@ -88,13 +88,23 @@
             if (action.type == 'clear and show') {
                 ret.items = action.resp.results;
                 ret.max_results_per_page = action.resp.max_results_per_page;
-                ret.offset = action.resp.offset;
+                if (action.resp.offset > ret.offset) {
+                    ret.offset = action.resp.offset;
+                }
+                ret.reachedEnd = false;
 
             } else if (action.type == 'extend') {
-                ret.items = [...ret.items, ...action.resp.results]
+                if (action.resp.results.length > 0) {
+                    ret.items = [...ret.items, ...action.resp.results]
+                } else {
+                    ret.reachedEnd = true;
+                }
                 ret.max_results_per_page = action.resp.max_results_per_page;
-                ret.offset = action.resp.offset;
+                if (action.resp.offset > ret.offset) {
+                    ret.offset = action.resp.offset;
+                }
             }
+
 
             return { ...ret }
         }
@@ -323,59 +333,64 @@
 
         function LoadMore() {
             console.log('LoadMore()');
+            if (!result.reachedEnd) {
+                let body = search;
+                body.offset = result.offset + result.max_results_per_page;
 
-            let body = search;
-            body.offset = result.offset + result.max_results_per_page;
+                fetch(
+                    '/api/people/search', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: body.searchString ? JSON.stringify({
+                        search: body.searchString,
+                        offset: body.offset
+                    }) : JSON.stringify(body),
 
-            fetch(
-                '/api/people/search', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: body.searchString ? JSON.stringify({
-                    search: body.searchString,
-                    offset: body.offset
-                }) : JSON.stringify(body),
+                }).then(resp => resp.json()
+                ).then(resp => {
+                    console.log('resp=', resp);
 
-            }).then(resp => resp.json()
-            ).then(resp => {
-                console.log('resp=', resp);
+                    resultDispatch({
+                        type: 'extend',
+                        resp: resp
+                    })
 
-                resultDispatch({
-                    type: 'extend',
-                    resp: resp
+                }).catch(err => {
+                    console.log('err=', err);
                 })
-
-            }).catch(err => {
-                console.log('err=', err);
-            })
-
+            } else {
+                console.log('reached the end');
+            }
         }
 
         // trigger event when result is viewable (inside the viewport)
 
 
         return (
-            <div className="card m-2" key={item.uuid}>
-                <h5 className="card-header">{item.first_name} {item.last_name}</h5>
-                <div className="card-body">
-                    <ImgLazyLoad
-                        src={item.imgSrc}
-                        onIsInViewport={isLast ? () => {
-                            console.log('last image loaded');
-                            LoadMore();
-                        } : null}
-                    />
-                    <p className="card-text">Birthday: {item.birth_month}-{item.birth_day}-{item.birth_year} {bdayIsToday}</p>
-                    <p className="card-text">Address: {item.address}</p>
-                    <p className="card-text">Phone: {item.phone}</p>
-                    <p className="card-text">Email: {item.email}</p>
+            <>
+                <div className="card m-2" key={item.uuid}>
+                    <h5 className="card-header">{item.first_name} {item.last_name}</h5>
+                    <div className="card-body">
+                        <ImgLazyLoad
+                            src={item.imgSrc}
+                            onIsInViewport={isLast ? () => {
+                                console.log('last image loaded');
+                                LoadMore();
+                            } : null}
+                        />
+                        <p className="card-text">Birthday: {item.birth_month}-{item.birth_day}-{item.birth_year} {bdayIsToday}</p>
+                        <p className="card-text">Address: {item.address}</p>
+                        <p className="card-text">Phone: {item.phone}</p>
+                        <p className="card-text">Email: {item.email}</p>
+
+                    </div>
 
                 </div>
-                {isLast ? <button className="m2" onClick={(el) => LoadMore()}> Load more </button> : ''}
 
-            </div>
+                {!result.reachedEnd && isLast ? <button className="m2" onClick={(el) => LoadMore()}> Load more </button> : ''}
+            </>
         );
 
         function ImgLazyLoad({ src, onIsInViewport }) {
@@ -387,11 +402,13 @@
             function handleIntersection(elements) {
                 elements.forEach(el => {
                     if (el.target == refImg.current && el.isIntersecting) {
-                        setIsInviewport(true);
-                        console.log('lazy loaded img src=', src);
-                        getIntersectionObserver().unobserve(refImg.current);
-                        if (onIsInViewport) {
-                            onIsInViewport();
+                        if (!isInViewport) {
+                            setIsInviewport(true);
+                            console.log('lazy loaded img src=', src);
+                            getIntersectionObserver().unobserve(refImg.current);
+                            if (onIsInViewport) {
+                                onIsInViewport();
+                            }
                         }
                     }
                 })
