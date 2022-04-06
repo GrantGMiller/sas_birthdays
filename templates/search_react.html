@@ -353,18 +353,14 @@
 
         }
 
+        // trigger event when result is viewable (inside the viewport)
+
+
         return (
             <div className="card m-2" key={item.uuid}>
                 <h5 className="card-header">{item.first_name} {item.last_name}</h5>
                 <div className="card-body">
-                    <img
-                        id='img_card_UUID'
-                        src={item.imgSrc}
-                        style={style}
-                        loading="lazy"
-                        className='img-thumbnail rounded'
-                        onLoad={(el) => isLast ? LoadMore() : console.log('img loaded')}
-                    />
+                    <ImgLazyLoad src={item.imgSrc} onIsInViewport={isLast ? () => { console.log('last image loaded'); LoadMore(); } : null} />
                     <p className="card-text">Birthday: {item.birth_month}-{item.birth_day}-{item.birth_year} {bdayIsToday}</p>
                     <p className="card-text">Address: {item.address}</p>
                     <p className="card-text">Phone: {item.phone}</p>
@@ -374,7 +370,43 @@
                 {isLast ? <button className="m2" onClick={(el) => LoadMore()}> Load more </button> : ''}
 
             </div>
-        )
+        );
+
+        function ImgLazyLoad({ src, onIsInViewport }) {
+            // image that wont be loaded until its inside the viewport
+            console.log('ImgLazyLoad(src=', src);
+
+            const [isInViewport, setIsInviewport] = React.useState(true);
+            const refImg = React.useRef();
+
+            function handleIntersection(elements) {
+                elements.forEach(el => {
+                    if (el.target == refImg.current && el.isIntersecting) {
+                        setIsInviewport(true);
+                        console.log('lazy loaded img src=', src);
+                        getIntersectionObserver().unobserve(refImg.current);
+                        if (onIsInViewport) {
+                            onIsInViewport();
+                        }
+                    }
+                })
+            }
+
+            let observer;
+            function getIntersectionObserver() {
+                if (observer === undefined) {
+                    observer = new IntersectionObserver(handleIntersection);
+                }
+                return observer;
+            }
+
+            React.useEffect(() => {
+                let observer = getIntersectionObserver();
+                observer.observe(refImg.current);
+            })
+
+            return <img ref={refImg} src={src} />
+        }
     }
 
     // render the app
