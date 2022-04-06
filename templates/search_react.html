@@ -24,109 +24,131 @@
         )
     }
 
+    function searchReducer(search, action) {
+        // this is the "what" that we are searching for
+        console.log('searchReducer(search=', search, ', action=', action);
+
+        let body = search;
+
+        if (action.type == 'update') {
+            if (action.month || action.day || action.thisWeek) {
+
+                if (action.month != body.month || action.day != body.day || action.thisWeek != body.thisWeek) {
+                    body.month = action.month;
+                    body.day = action.day;
+                    body.thisWeek = action.thisWeek;
+                    body.searchString = '';
+                } else {
+                    console.log('search is the same as before, skip');
+                    return body;
+                }
+
+            } else if (action.searchString.length > 0) {
+                if (action.searchString != body.searchString) {
+                    body.month = null;
+                    body.day = null;
+                    body.thisWeek = null;
+                    body.searchString = action.searchString;
+                } else {
+                    console.log('searchString is the same as before, skip');
+                    return body
+                }
+
+
+            } else if (action.searchString.length == 0) {
+                body.month = null;
+                body.day = null;
+                body.thisWeek = null;
+                body.searchString = action.searchString;
+                console.log('searchString is empty. skip the fetch');
+                return body;
+            }
+
+            fetch(
+                '/api/people/search', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: body.searchString ? JSON.stringify({ 'search': body.searchString }) : JSON.stringify(body),
+
+            }).then(resp => resp.json()
+            ).then(resp => {
+                console.log('resp=', resp);
+
+                action.resultDispatch({
+                    type: 'clear and show',
+                    resp: resp,
+                })
+
+            }).catch(err => {
+                console.log('err=', err);
+            })
+        }
+
+        return body;
+    }
+
+
+
+
+    function resultReducer(result, action) {
+        // call this when there are new restuls to add to the page
+        console.log('resultReducer(result=', result, ', action=', action);
+
+        let ret = result;
+
+        if (action.type == 'clear and show') {
+            ret.items = action.resp.results;
+            ret.max_results_per_page = action.resp.max_results_per_page;
+            if (action.resp.offset > ret.offset) {
+                ret.offset = action.resp.offset;
+            }
+
+            if (ret.items.length < ret.max_results_per_page) {
+                ret.reachedEnd = true;
+            } else {
+                ret.reachedEnd = false;
+            }
+
+        } else if (action.type == 'extend') {
+            if (action.resp.results.length > 0) {
+                //ret.items = [...ret.items, ...action.resp.results]
+                action.resp.results.forEach(item => {
+                    let found = false;
+                    ret.items.forEach(rItem => {
+                        if (item.uuid == rItem.uuid) {
+                            found = true;
+                        }
+                    })
+                    if (!found) {
+                        ret.items.push(item);
+                    } else {
+                        console.log('item already in ret.items uuid=', item.uuid);
+                    }
+                })
+            } else {
+                ret.reachedEnd = true;
+            }
+            ret.max_results_per_page = action.resp.max_results_per_page;
+            if (action.resp.offset > ret.offset) {
+                ret.offset = action.resp.offset;
+            }
+
+        } else if (action.type == 'clear') {
+            ret.items = [];
+        }
+
+        return { ...ret }
+    }
+
     function ResultsWithSearchFilterAndPresets() {
 
         const [search, searchDispatch] = React.useReducer(searchReducer, { searchString: '' });
         const [result, resultDispatch] = React.useReducer(resultReducer, { items: [], offset: 0 });
 
 
-        function searchReducer(search, action) {
-            // this is the "what" that we are searching for
-            console.log('searchReducer(search=', search, ', action=', action);
 
-            let body = search;
-
-            if (action.type == 'update') {
-                if (action.month || action.day || action.thisWeek) {
-                    body.month = action.month;
-                    body.day = action.day;
-                    body.thisWeek = action.thisWeek;
-                    body.searchString = '';
-
-                } else if (action.searchString.length > 0) {
-                    if (action.searchString != body.searchString) {
-                        body.month = null;
-                        body.day = null;
-                        body.thisWeek = null;
-                        body.searchString = action.searchString;
-                    } else {
-                        console.log('search is the same as before, skip');
-                        return body
-                    }
-
-
-                } else if (action.searchString.length == 0) {
-                    body.month = null;
-                    body.day = null;
-                    body.thisWeek = null;
-                    body.searchString = action.searchString;
-                    console.log('searchString is empty. skip the fetch');
-                    return body;
-                }
-
-                fetch(
-                    '/api/people/search', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                    },
-                    body: body.searchString ? JSON.stringify({ 'search': body.searchString }) : JSON.stringify(body),
-
-                }).then(resp => resp.json()
-                ).then(resp => {
-                    console.log('resp=', resp);
-
-                    resultDispatch({
-                        type: 'clear and show',
-                        resp: resp,
-                    })
-
-                }).catch(err => {
-                    console.log('err=', err);
-                })
-            }
-
-            return body;
-        }
-
-
-
-
-        function resultReducer(result, action) {
-            // call this when there are new restuls to add to the page
-            console.log('resultReducer(result=', result, ', action=', action);
-
-            let ret = result;
-
-            if (action.type == 'clear and show') {
-                ret.items = action.resp.results;
-                ret.max_results_per_page = action.resp.max_results_per_page;
-                if (action.resp.offset > ret.offset) {
-                    ret.offset = action.resp.offset;
-                }
-
-                if (ret.items.length < ret.max_results_per_page) {
-                    ret.reachedEnd = true;
-                } else {
-                    ret.reachedEnd = false;
-                }
-
-            } else if (action.type == 'extend') {
-                if (action.resp.results.length > 0) {
-                    ret.items = [...ret.items, ...action.resp.results]
-                } else {
-                    ret.reachedEnd = true;
-                }
-                ret.max_results_per_page = action.resp.max_results_per_page;
-                if (action.resp.offset > ret.offset) {
-                    ret.offset = action.resp.offset;
-                }
-            } else if (action.type == 'clear') {
-                ret.items = [];
-            }
-
-            return { ...ret }
-        }
 
         return (
             <>
@@ -134,10 +156,7 @@
                     <SearchFilter
                         search={search}
                         searchDispatch={searchDispatch}
-
-                        result={result}
                         resultDispatch={resultDispatch}
-
                     />
 
 
@@ -151,35 +170,30 @@
 
                             search={search}
                             searchDispatch={searchDispatch}
-
-                            result={result}
                             resultDispatch={resultDispatch}
+
                         />
                         <Preset
                             name='This Week'
 
                             search={search}
                             searchDispatch={searchDispatch}
-
-                            result={result}
                             resultDispatch={resultDispatch}
+
                         />
                         <Preset
                             name='This Month'
 
                             search={search}
                             searchDispatch={searchDispatch}
-
-                            result={result}
                             resultDispatch={resultDispatch}
+
                         />
                     </div>
                 </div>
                 <hr />
                 <Results
                     search={search}
-                    searchDispatch={searchDispatch}
-
                     result={result}
                     resultDispatch={resultDispatch}
                 />
@@ -187,7 +201,7 @@
         )
     }
 
-    function SearchFilter({ search, searchDispatch, result, resultDispatch }) {
+    function SearchFilter({ search, searchDispatch, resultDispatch }) {
         const refTimeout = React.useRef(null);
 
         function doSearchNow(string) {
@@ -196,8 +210,10 @@
 
             searchDispatch({
                 type: 'update',
-                searchString: string
+                searchString: string,
+                resultDispatch: resultDispatch,
             })
+            clearTimeout(refTimeout.current);
 
 
         }
@@ -213,7 +229,6 @@
                             className="form-control"
                             id="searchFor"
                             placeholder="Enter a name/company/email"
-
                             onChange={(el) => {
 
                                 console.log('onChange(el=', el);
@@ -236,33 +251,7 @@
 
 
 
-    function Preset({ name, search, searchDispatch, result, resultDispatch }) {
-
-        function doSearchNow(month, day, thisWeek) {
-
-            console.log('doSearchNow() preset month=', month, ', day=', day);
-            fetch(
-                '/api/people/search', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify(thisWeek ? { thisWeek: true } : { month: month, day: day }),
-            }).then(resp => resp.json()
-            ).then(resp => {
-                console.log('resp=', resp);
-
-                resultDispatch({
-                    'type': 'response',
-                    'resp': resp,
-                })
-
-            }).catch(err => {
-                console.log('err=', err);
-            })
-
-        }
-
+    function Preset({ name, search, searchDispatch, resultDispatch }) {
 
         return (
             <>
@@ -285,6 +274,8 @@
                                     month: month,
                                     day: day,
                                     thisWeek: false,
+                                    searchString: '',
+                                    resultDispatch: resultDispatch,
                                 })
                                 break;
                             case 'This Week':
@@ -294,6 +285,8 @@
                                     month: null,
                                     day: null,
                                     thisWeek: true,
+                                    searchString: '',
+                                    resultDispatch: resultDispatch,
                                 })
                                 break;
                             case 'This Month':
@@ -303,6 +296,8 @@
                                     month: month,
                                     day: null,
                                     thisWeek: false,
+                                    searchString: '',
+                                    resultDispatch: resultDispatch,
                                 })
                                 break;
 
@@ -341,8 +336,10 @@
         )
     }
 
-    function Result({ item, isLast, search, searchDispatch, result, resultDispatch }) {
-        console.log('Result(result=', result, ', isLast=', isLast);
+    function Result({ item, isLast, search, result, resultDispatch }) {
+        if (isLast) {
+            console.log('Result(result=', result, ', isLast=', isLast);
+        }
         let style = { 'maxHeight': '150px' }
 
         let d = new Date((item.date_of_birth_timestamp * 1000) + 1);
