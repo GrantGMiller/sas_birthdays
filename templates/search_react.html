@@ -43,12 +43,25 @@
                     body.thisWeek = action.thisWeek;
                     body.searchString = '';
 
-                } else if (action.searchString) {
+                } else if (action.searchString.length > 0) {
+                    if (action.searchString != body.searchString) {
+                        body.month = null;
+                        body.day = null;
+                        body.thisWeek = null;
+                        body.searchString = action.searchString;
+                    } else {
+                        console.log('search is the same as before, skip');
+                        return body
+                    }
+
+
+                } else if (action.searchString.length == 0) {
                     body.month = null;
                     body.day = null;
                     body.thisWeek = null;
                     body.searchString = action.searchString;
-
+                    console.log('searchString is empty. skip the fetch');
+                    return body;
                 }
 
                 fetch(
@@ -91,7 +104,12 @@
                 if (action.resp.offset > ret.offset) {
                     ret.offset = action.resp.offset;
                 }
-                ret.reachedEnd = false;
+
+                if (ret.items.length < ret.max_results_per_page) {
+                    ret.reachedEnd = true;
+                } else {
+                    ret.reachedEnd = false;
+                }
 
             } else if (action.type == 'extend') {
                 if (action.resp.results.length > 0) {
@@ -103,8 +121,9 @@
                 if (action.resp.offset > ret.offset) {
                     ret.offset = action.resp.offset;
                 }
+            } else if (action.type == 'clear') {
+                ret.items = [];
             }
-
 
             return { ...ret }
         }
