@@ -360,7 +360,13 @@
             <div className="card m-2" key={item.uuid}>
                 <h5 className="card-header">{item.first_name} {item.last_name}</h5>
                 <div className="card-body">
-                    <ImgLazyLoad src={item.imgSrc} onIsInViewport={isLast ? () => { console.log('last image loaded'); LoadMore(); } : null} />
+                    <ImgLazyLoad
+                        src={item.imgSrc}
+                        onIsInViewport={isLast ? () => {
+                            console.log('last image loaded');
+                            LoadMore();
+                        } : null}
+                    />
                     <p className="card-text">Birthday: {item.birth_month}-{item.birth_day}-{item.birth_year} {bdayIsToday}</p>
                     <p className="card-text">Address: {item.address}</p>
                     <p className="card-text">Phone: {item.phone}</p>
@@ -374,9 +380,8 @@
 
         function ImgLazyLoad({ src, onIsInViewport }) {
             // image that wont be loaded until its inside the viewport
-            console.log('ImgLazyLoad(src=', src);
 
-            const [isInViewport, setIsInviewport] = React.useState(true);
+            const [isInViewport, setIsInviewport] = React.useState(false);
             const refImg = React.useRef();
 
             function handleIntersection(elements) {
@@ -405,7 +410,7 @@
                 observer.observe(refImg.current);
             })
 
-            return <img ref={refImg} src={src} />
+            return <img ref={refImg} src={isInViewport ? src : ''} />
         }
     }
 
