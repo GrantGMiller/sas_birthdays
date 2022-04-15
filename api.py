@@ -49,7 +49,7 @@ def Setup(a):
             searchMonth = int(requestData['month'])
             if requestData.get('day', None):
                 searchDay = int(requestData['day'])
-
+                print('52 searchMonth=', searchMonth, ', searchDay=', searchDay)
                 ret = app.db.FindAll(
                     people.Person,
                     _where='birth_month', _equals=searchMonth,
@@ -58,7 +58,6 @@ def Setup(a):
                     _limit=None if export else MAX_RESULTS_PER_PAGE,
                     _offset=None if export else offset,
                 )
-
             else:  # search the month only
                 ret = app.db.FindAll(
                     people.Person,
@@ -79,7 +78,7 @@ def Setup(a):
                 _offset=None if export else offset,
             )
 
-        elif 'thisWeek' in requestData:
+        elif requestData.get('thisWeek', None):
             now = datetime.datetime.now()
             startDT = now - datetime.timedelta(days=now.weekday())
             endDT = startDT + datetime.timedelta(days=7, microseconds=-1)

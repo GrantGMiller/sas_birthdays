@@ -2,7 +2,6 @@ import requests
 import config
 import sys
 
-
 def Slack(*args):
     '''
     Send a Slack message to the admin.
@@ -10,7 +9,7 @@ def Slack(*args):
     :return: None
     '''
     s = ' '.join(str(a) for a in args)
-    if sys.platform.startswith('win'):
+    if '127.0.0.1' in config.BASE_URL:
         s = '***DEV***\n' + s
     else:  # linux
         requests.post(

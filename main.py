@@ -12,7 +12,7 @@ import people
 import api
 from slack import Slack
 import flask_jobs
-from werkzeug.middleware import proxy_fix;
+from werkzeug.middleware import proxy_fix
 
 app = Flask('SAS Birthdays')
 app.config['SECRET_KEY'] = config.SECRET_KEY

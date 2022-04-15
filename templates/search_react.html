@@ -64,26 +64,7 @@
                 return body;
             }
 
-            fetch(
-                '/api/people/search', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: body.searchString ? JSON.stringify({ 'search': body.searchString }) : JSON.stringify(body),
 
-            }).then(resp => resp.json()
-            ).then(resp => {
-                console.log('resp=', resp);
-
-                action.resultDispatch({
-                    type: 'clear and show',
-                    resp: resp,
-                })
-
-            }).catch(err => {
-                console.log('err=', err);
-            })
         }
 
         return body;
@@ -147,6 +128,7 @@
         const [search, searchDispatch] = React.useReducer(searchReducer, { searchString: '' });
         const [result, resultDispatch] = React.useReducer(resultReducer, { items: [], offset: 0 });
 
+        const refInput = React.useRef(null);
 
 
 
@@ -157,6 +139,7 @@
                         search={search}
                         searchDispatch={searchDispatch}
                         resultDispatch={resultDispatch}
+                        refInput={refInput}
                     />
 
 
@@ -171,6 +154,7 @@
                             search={search}
                             searchDispatch={searchDispatch}
                             resultDispatch={resultDispatch}
+                            refInput={refInput}
 
                         />
                         <Preset
@@ -179,6 +163,7 @@
                             search={search}
                             searchDispatch={searchDispatch}
                             resultDispatch={resultDispatch}
+                            refInput={refInput}
 
                         />
                         <Preset
@@ -187,6 +172,7 @@
                             search={search}
                             searchDispatch={searchDispatch}
                             resultDispatch={resultDispatch}
+                            refInput={refInput}
 
                         />
                     </div>
@@ -201,9 +187,8 @@
         )
     }
 
-    function SearchFilter({ search, searchDispatch, resultDispatch }) {
+    function SearchFilter({ search, searchDispatch, resultDispatch, refInput }) {
         const refTimeout = React.useRef(null);
-
         function doSearchNow(string) {
 
             console.log('doSearchNow() string=', string);
@@ -211,11 +196,11 @@
             searchDispatch({
                 type: 'update',
                 searchString: string,
-                resultDispatch: resultDispatch,
             })
             clearTimeout(refTimeout.current);
+            console.log('218 search=', search)
 
-
+            doSearch(search, resultDispatch)
         }
 
         return (
@@ -224,6 +209,7 @@
                 <div className="row">
                     <div className="col">
                         <input
+                            ref={refInput}
                             name="searchFor"
                             type="text"
                             className="form-control"
@@ -241,6 +227,7 @@
                                     500,
                                     el.target.value,
                                 );
+
                             }}
                         />
                     </div>
@@ -251,7 +238,7 @@
 
 
 
-    function Preset({ name, search, searchDispatch, resultDispatch }) {
+    function Preset({ name, search, searchDispatch, resultDispatch, refInput }) {
 
         return (
             <>
@@ -265,6 +252,8 @@
                         let month = String(d.getMonth() + 1);
                         let day = String(d.getDate());
 
+                        refInput.current.value = '';
+
                         switch (name) {
 
                             case 'Today':
@@ -275,19 +264,20 @@
                                     day: day,
                                     thisWeek: false,
                                     searchString: '',
-                                    resultDispatch: resultDispatch,
                                 })
+                                doSearch(search, resultDispatch);
                                 break;
                             case 'This Week':
                                 console.log('Week switch case');
+
                                 searchDispatch({
                                     type: 'update',
                                     month: null,
                                     day: null,
                                     thisWeek: true,
                                     searchString: '',
-                                    resultDispatch: resultDispatch,
                                 })
+                                doSearch(search, resultDispatch);
                                 break;
                             case 'This Month':
                                 console.log('Month switch case');
@@ -297,8 +287,8 @@
                                     day: null,
                                     thisWeek: false,
                                     searchString: '',
-                                    resultDispatch: resultDispatch,
                                 })
+                                doSearch(search, resultDispatch);
                                 break;
 
                             default:
@@ -445,6 +435,30 @@
 
             return <img ref={refImg} src={isInViewport ? src : ''} />
         }
+    }
+
+    function doSearch(search, resultDispatch) {
+        console.log('doSearch(', search, resultDispatch);
+        fetch(
+            '/api/people/search', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: search.searchString ? JSON.stringify({ 'search': search.searchString }) : JSON.stringify(search),
+
+        }).then(resp => resp.json()
+        ).then(resp => {
+            console.log('resp=', resp);
+
+            resultDispatch({
+                type: 'clear and show',
+                resp: resp,
+            })
+
+        }).catch(err => {
+            console.log('err=', err);
+        })
     }
 
     // render the app

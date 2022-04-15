@@ -23,15 +23,16 @@ def Setup(app):
     @app.route('/search', methods=['GET', 'POST'])
     @CountViews
     def Search():
-        if request.method == 'POST':
-            return redirect('/api/people/search?searchFor={}'.format(request.form.get('searchFor')))
-
-        return render_template(
-            'search.html',
-            menu=GetMenu('Search'),
-            initSearch=request.args.get('searchFor', None),
-            isAdmin=IsAdmin(),
-        )
+        return redirect('/search_react')
+        # if request.method == 'POST':
+        #     return redirect('/api/people/search?searchFor={}'.format(request.form.get('searchFor')))
+        #
+        # return render_template(
+        #     'search.html',
+        #     menu=GetMenu('Search'),
+        #     initSearch=request.args.get('searchFor', None),
+        #     isAdmin=IsAdmin(),
+        # )
 
     @app.route('/search_react', methods=['GET', 'POST'])
     @CountViews
